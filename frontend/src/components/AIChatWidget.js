@@ -1,0 +1,254 @@
+import React, { useState, useRef, useEffect } from 'react';
+import './AIChatWidget.css';
+import api from '../config/api';
+
+const AIChatWidget = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: 'Hi there! 🐾 I am your PawVerse AI Assistant. How can I help you and your pet today?' }
+  ]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const messagesEndRef = useRef(null);
+  const abortControllerRef = useRef(null);
+
+  const toggleWidget = () => setIsOpen(!isOpen);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Function to format message content with proper line breaks and bullet points
+  const formatMessageContent = (content) => {
+    if (!content) return '';
+    
+    // Split by double newlines for paragraphs
+    const paragraphs = content.split(/\n\n/);
+    
+    return paragraphs.map((para, idx) => {
+      // Check if paragraph contains bullet points
+      if (para.includes('•') || para.includes('-') || para.match(/^\d+\./m)) {
+        const lines = para.split(/\n/);
+        return (
+          <div key={idx} className="ai-paragraph">
+            {lines.map((line, lineIdx) => {
+              if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
+                return <div key={lineIdx} className="ai-bullet-point">• {line.trim().substring(1)}</div>;
+              } else if (line.match(/^\d+\./)) {
+                return <div key={lineIdx} className="ai-numbered-point">{line.trim()}</div>;
+              } else if (line.trim() && line.includes('**')) {
+                // Handle bold text
+                const parts = line.split(/\*\*(.*?)\*\*/g);
+                return (
+                  <div key={lineIdx} className="ai-text-line">
+                    {parts.map((part, pIdx) => 
+                      pIdx % 2 === 1 ? <strong key={pIdx}>{part}</strong> : part
+                    )}
+                  </div>
+                );
+              } else if (line.trim()) {
+                return <div key={lineIdx} className="ai-text-line">{line}</div>;
+              }
+              return null;
+            })}
+          </div>
+        );
+      }
+      
+      // Handle bold text in regular paragraphs
+      const parts = para.split(/\*\*(.*?)\*\*/g);
+      return (
+        <div key={idx} className="ai-paragraph">
+          {parts.map((part, pIdx) => 
+            pIdx % 2 === 1 ? <strong key={pIdx}>{part}</strong> : part
+          )}
+        </div>
+      );
+    });
+  };
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!input.trim() || isStreaming) return;
+
+    const userMessage = { role: 'user', content: input };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsTyping(true);
+
+    // Create new abort controller for this request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
+    // Prepare chat history (last 20 messages for context)
+    const chatHistory = messages.slice(-20).map(m => ({ role: m.role, content: m.content }));
+    chatHistory.push(userMessage);
+
+    try {
+      // Try streaming first
+      const streamResponse = await fetch('http://localhost:5000/api/ai/chat?stream=true', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
+        },
+        body: JSON.stringify({ messages: chatHistory }),
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (streamResponse.ok && streamResponse.headers.get('content-type')?.includes('text/event-stream')) {
+        // Handle streaming response
+        setIsStreaming(true);
+        
+        // Add temporary streaming message
+        const streamingMessageIndex = messages.length + 1;
+        setMessages((prev) => [...prev, { role: 'assistant', content: '', isStreaming: true }]);
+        
+        const reader = streamResponse.body.getReader();
+        const decoder = new TextDecoder();
+        let fullContent = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+              
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.content) {
+                  fullContent += parsed.content;
+                  // Update the streaming message
+                  setMessages(prev => 
+                    prev.map((msg, idx) => 
+                      idx === prev.length - 1 && msg.isStreaming 
+                        ? { ...msg, content: fullContent }
+                        : msg
+                    )
+                  );
+                }
+              } catch (e) {
+                // Ignore parse errors
+              }
+            }
+          }
+        }
+        
+        // Mark streaming as complete
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.isStreaming ? { ...msg, isStreaming: false } : msg
+          )
+        );
+        setIsStreaming(false);
+        
+      } else {
+        // Fallback to non-streaming API
+        const res = await api.post('/ai/chat', { messages: chatHistory });
+        const aiResponse = { role: 'assistant', content: res.data.data };
+        setMessages((prev) => [...prev, aiResponse]);
+      }
+      
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        console.log('Request aborted');
+        return;
+      }
+      console.error('AI Error:', err);
+      const errorMessage = {
+        role: 'assistant',
+        content: "I'm sorry, I'm having trouble connecting right now. Please try again or contact a vet if it's an emergency."
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const quickReplies = [
+    "My dog is not eating",
+    "How often to vaccinate my cat?",
+    "Best food for a puppy?",
+    "My cat temperature is hot"
+  ];
+
+  return (
+    <div className={`ai-chat-container ${isOpen ? 'open' : ''}`}>
+      {!isOpen && (
+        <button className="ai-chat-toggle btn-primary" onClick={toggleWidget}>
+          <span className="chat-icon">🤖</span> AI Vet
+        </button>
+      )}
+
+      {isOpen && (
+        <div className="ai-chat-window">
+          <div className="ai-chat-header">
+            <div className="header-info">
+              <span className="ai-avatar">🤖</span>
+              <div>
+                <h4>PawVerse AI</h4>
+                <p>Always here for your pets</p>
+              </div>
+            </div>
+            <button className="ai-close-btn" onClick={toggleWidget}>✕</button>
+          </div>
+
+          <div className="ai-chat-messages">
+            {messages.map((msg, index) => (
+              <div key={index} className={`ai-message ${msg.role === 'assistant' ? 'ai' : 'user'}`}>
+                {msg.role === 'assistant' ? (
+                  <div className="ai-formatted-response">
+                    {formatMessageContent(msg.content)}
+                    {msg.isStreaming && <span className="streaming-cursor">▋</span>}
+                  </div>
+                ) : (
+                  msg.content
+                )}
+              </div>
+            ))}
+            {isTyping && !isStreaming && (
+              <div className="ai-message ai loading-dots">
+                <span>.</span><span>.</span><span>.</span>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="ai-quick-replies">
+            {quickReplies.map((reply, i) => (
+              <button key={i} className="quick-reply-btn" onClick={() => setInput(reply)}>
+                {reply}
+              </button>
+            ))}
+          </div>
+
+          <form className="ai-chat-input-form" onSubmit={handleSend}>
+            <input
+              type="text"
+              placeholder="Ask me anything..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              className="form-input"
+              disabled={isStreaming}
+            />
+            <button type="submit" className="ai-send-btn" disabled={!input.trim() || isStreaming}>
+              ➤
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AIChatWidget;

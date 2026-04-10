@@ -1,0 +1,105 @@
+.lost-found-container {
+  padding: 40px 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.lf-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.lf-header h1 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  background: var(--grad-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 10px;
+}
+
+.lf-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.lf-tab {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: white;
+  padding: 12px 30px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.lf-tab.active {
+  background: var(--grad-primary);
+  border-color: transparent;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.lf-form {
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  padding: 30px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
+  margin-bottom: 40px;
+}
+
+.lf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.lf-card {
+  background: var(--glass);
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  position: relative;
+  transition: transform 0.2s;
+}
+
+.lf-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.lf-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 12px;
+}
+.lf-badge.lost { background: #ef4444; color: white; }
+.lf-badge.found { background: #10b981; color: white; }
+
+.lf-date {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.lf-desc {
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 15px;
+}
+
+.lf-contact {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 14px;
+}
