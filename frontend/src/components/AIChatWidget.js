@@ -23,11 +23,9 @@ const AIChatWidget = () => {
   const formatMessageContent = (content) => {
     if (!content) return '';
     
-    // Split by double newlines for paragraphs
     const paragraphs = content.split(/\n\n/);
     
     return paragraphs.map((para, idx) => {
-      // Check if paragraph contains bullet points
       if (para.includes('•') || para.includes('-') || para.match(/^\d+\./m)) {
         const lines = para.split(/\n/);
         return (
@@ -38,7 +36,6 @@ const AIChatWidget = () => {
               } else if (line.match(/^\d+\./)) {
                 return <div key={lineIdx} className="ai-numbered-point">{line.trim()}</div>;
               } else if (line.trim() && line.includes('**')) {
-                // Handle bold text
                 const parts = line.split(/\*\*(.*?)\*\*/g);
                 return (
                   <div key={lineIdx} className="ai-text-line">
@@ -56,7 +53,6 @@ const AIChatWidget = () => {
         );
       }
       
-      // Handle bold text in regular paragraphs
       const parts = para.split(/\*\*(.*?)\*\*/g);
       return (
         <div key={idx} className="ai-paragraph">
@@ -78,7 +74,6 @@ const AIChatWidget = () => {
         return newContent;
       }
     } catch (e) {
-      // Ignore parse errors
       console.warn('Failed to parse chunk:', e);
     }
     return currentContent;
@@ -93,19 +88,18 @@ const AIChatWidget = () => {
     setInput('');
     setIsTyping(true);
 
-    // Create new abort controller for this request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
     abortControllerRef.current = new AbortController();
 
-    // Prepare chat history (last 20 messages for context)
     const chatHistory = messages.slice(-20).map(m => ({ role: m.role, content: m.content }));
     chatHistory.push(userMessage);
 
     try {
-      // Try streaming first
-      const streamResponse = await fetch('http://localhost:5000/api/ai/chat?stream=true', {
+      // Base URL check from process.env for production
+      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      const streamResponse = await fetch(`${apiBase}/ai/chat?stream=true`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -116,10 +110,7 @@ const AIChatWidget = () => {
       });
 
       if (streamResponse.ok && streamResponse.headers.get('content-type')?.includes('text/event-stream')) {
-        // Handle streaming response
         setIsStreaming(true);
-        
-        // Add temporary streaming message
         setMessages((prev) => [...prev, { role: 'assistant', content: '', isStreaming: true }]);
         
         const reader = streamResponse.body.getReader();
@@ -139,7 +130,7 @@ const AIChatWidget = () => {
               const data = line.slice(6);
               if (data === '[DONE]') continue;
               
-              // Process each chunk using the helper function
+              // eslint-disable-next-line no-loop-func
               fullContent = processStreamChunk(data, fullContent, (newContent) => {
                 setMessages(prev => 
                   prev.map((msg, idx) => 
@@ -153,7 +144,6 @@ const AIChatWidget = () => {
           }
         }
         
-        // Mark streaming as complete
         setMessages(prev => 
           prev.map(msg => 
             msg.isStreaming ? { ...msg, isStreaming: false } : msg
@@ -162,21 +152,17 @@ const AIChatWidget = () => {
         setIsStreaming(false);
         
       } else {
-        // Fallback to non-streaming API
         const res = await api.post('/ai/chat', { messages: chatHistory });
         const aiResponse = { role: 'assistant', content: res.data.data };
         setMessages((prev) => [...prev, aiResponse]);
       }
       
     } catch (err) {
-      if (err.name === 'AbortError') {
-        console.log('Request aborted');
-        return;
-      }
+      if (err.name === 'AbortError') return;
       console.error('AI Error:', err);
       const errorMessage = {
         role: 'assistant',
-        content: "I'm sorry, I'm having trouble connecting right now. Please try again or contact a vet if it's an emergency."
+        content: "I'm sorry, I'm having trouble connecting right now. Please try again."
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
