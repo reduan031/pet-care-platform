@@ -68,6 +68,22 @@ const AIChatWidget = () => {
     });
   };
 
+  // Helper function to handle streaming chunks
+  const processStreamChunk = (chunk, currentContent, updateMessageCallback) => {
+    try {
+      const parsed = JSON.parse(chunk);
+      if (parsed.content) {
+        const newContent = currentContent + parsed.content;
+        updateMessageCallback(newContent);
+        return newContent;
+      }
+    } catch (e) {
+      // Ignore parse errors
+      console.warn('Failed to parse chunk:', e);
+    }
+    return currentContent;
+  };
+
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim() || isStreaming) return;
@@ -104,7 +120,6 @@ const AIChatWidget = () => {
         setIsStreaming(true);
         
         // Add temporary streaming message
-        const streamingMessageIndex = messages.length + 1;
         setMessages((prev) => [...prev, { role: 'assistant', content: '', isStreaming: true }]);
         
         const reader = streamResponse.body.getReader();
@@ -112,6 +127,7 @@ const AIChatWidget = () => {
         let fullContent = '';
 
         while (true) {
+          // eslint-disable-next-line no-await-in-loop
           const { done, value } = await reader.read();
           if (done) break;
           
@@ -123,22 +139,16 @@ const AIChatWidget = () => {
               const data = line.slice(6);
               if (data === '[DONE]') continue;
               
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.content) {
-                  fullContent += parsed.content;
-                  // Update the streaming message
-                  setMessages(prev => 
-                    prev.map((msg, idx) => 
-                      idx === prev.length - 1 && msg.isStreaming 
-                        ? { ...msg, content: fullContent }
-                        : msg
-                    )
-                  );
-                }
-              } catch (e) {
-                // Ignore parse errors
-              }
+              // Process each chunk using the helper function
+              fullContent = processStreamChunk(data, fullContent, (newContent) => {
+                setMessages(prev => 
+                  prev.map((msg, idx) => 
+                    idx === prev.length - 1 && msg.isStreaming 
+                      ? { ...msg, content: newContent }
+                      : msg
+                  )
+                );
+              });
             }
           }
         }
