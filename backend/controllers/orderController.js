@@ -12,16 +12,23 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No order items' });
     }
 
-    let totalAmount = 0;
     const orderItems = [];
+    let totalAmount = 0;
 
-    for (let item of items) {
-      const product = await Product.findById(item.product);
+    for (const item of items) {
+      // Handle both item._id and item.product (from different cart structures)
+      const productId = item._id || item.product;
+      
+      if (!productId) {
+        return res.status(400).json({ success: false, message: 'Invalid cart item: missing product ID' });
+      }
+      
+      const product = await Product.findById(productId);
       if (!product) {
-        return res.status(404).json({ success: false, message: `Product ${item.product} not found` });
+        return res.status(404).json({ success: false, message: `Product not found: ${productId}` });
       }
 
-      if (product.stock < item.quantity) {
+      if (product.stock < (item.quantity || 1)) {
         return res.status(400).json({ 
           success: false, 
           message: `Insufficient stock for ${product.name}` 
@@ -30,13 +37,13 @@ exports.createOrder = async (req, res) => {
 
       orderItems.push({
         product: product._id,
-        quantity: item.quantity,
+        quantity: item.quantity || 1,
         price: product.discountPrice || product.price
       });
 
-      totalAmount += (product.discountPrice || product.price) * item.quantity;
+      totalAmount += (product.discountPrice || product.price) * (item.quantity || 1);
 
-      product.stock -= item.quantity;
+      product.stock -= (item.quantity || 1);
       await product.save();
     }
 

@@ -6,14 +6,21 @@ const QUICK_LINKS = [
   { to: '/my-pets',      icon: '🐾', title: 'My Pets',      desc: 'Manage your beloved companions' },
   { to: '/my-orders',    icon: '📦', title: 'My Orders',     desc: 'Track your order history' },
   { to: '/appointments', icon: '📅', title: 'Appointments',  desc: 'View vet appointments' },
-  { to: '/products',     icon: '🛍️', title: 'Shop',          desc: 'Browse premium products' },
-  { to: '/pets',         icon: '🏪', title: 'Marketplace',   desc: 'Adopt or list pets' },
+  { to: '/products?from=dashboard', icon: '🛍️', title: 'Shop',          desc: 'Browse premium products' },
+  { to: '/marketplace-pro?from=dashboard', icon: '🏪', title: 'Marketplace',   desc: 'Sell, Pet boarding, and adopt by location' },
+  { to: '/pet-social?from=dashboard', icon: '📱', title: 'Pet Social',    desc: 'Connect, share, and discover with pet lovers' },
   { to: '/cart',         icon: '🛒', title: 'Cart',          desc: 'View your shopping cart' },
 ];
 
 const Dashboard = () => {
   const { user } = useAuth();
   const firstName = user?.name?.split(' ')[0] || 'Pet Parent';
+  const links = user?.role === 'admin'
+    ? [
+        { to: '/admin', icon: '🛡️', title: 'Admin Panel', desc: 'Manage platform modules and approvals' },
+        ...QUICK_LINKS,
+      ]
+    : QUICK_LINKS;
 
   React.useEffect(() => {
     const obs = new IntersectionObserver((entries) => {
@@ -61,7 +68,7 @@ const Dashboard = () => {
 
         {/* Quick links grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '18px' }}>
-          {QUICK_LINKS.map(link => (
+          {links.map(link => (
             <Link
               key={link.to}
               to={link.to}

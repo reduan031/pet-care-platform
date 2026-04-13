@@ -3,7 +3,7 @@
 // ================================
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useCart } from '../context/CartC/ontext';
+import { useCart } from '../context/CartContext';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();

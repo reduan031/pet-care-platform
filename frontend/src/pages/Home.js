@@ -203,10 +203,10 @@ const Home = () => {
                 The first all-in-one ecosystem for holistic pet care — from adoption to veterinary telemedicine, all in one beautiful platform.
               </p>
               <div className="hero-ctas">
-                <Link to="/products" className="btn-primary">🚀 Start Shopping</Link>
-                <Link to="/pets" className="btn-ghost">
+                <Link to="/marketplace-pro" className="btn-primary">🚀 Open Marketplace</Link>
+                <Link to="/pet-social" className="btn-ghost">
                   <span className="play-ring">▶</span>
-                  Find Pets
+                  Open Pet Social
                 </Link>
               </div>
               <div className="hero-stats">
@@ -262,12 +262,12 @@ const Home = () => {
           </div>
           <div className="categories-track reveal reveal-delay-1">
             {[
-              { icon: '🐱', name: 'Cats',    count: '2,400+', glow: 'rgba(139,92,246,0.3)', bg: 'rgba(139,92,246,0.18)', border: 'rgba(167,139,250,0.3)', accent: 'linear-gradient(90deg,#7C3AED,#A78BFA)', link: '/pets?type=cat' },
-              { icon: '🐶', name: 'Dogs',    count: '5,800+', glow: 'rgba(249,115,22,0.3)',  bg: 'rgba(249,115,22,0.18)', border: 'rgba(253,186,116,0.35)', accent: 'linear-gradient(90deg,#F97316,#FCD34D)', link: '/pets?type=dog' },
-              { icon: '🦜', name: 'Birds',   count: '1,200+', glow: 'rgba(6,182,212,0.3)',   bg: 'rgba(6,182,212,0.18)', border: 'rgba(103,232,249,0.35)', accent: 'linear-gradient(90deg,#06B6D4,#A5F3FC)', link: '/pets?type=bird' },
-              { icon: '🕊️', name: 'Pigeons', count: '340+',   glow: 'rgba(244,63,94,0.3)',   bg: 'rgba(244,63,94,0.18)', border: 'rgba(253,164,175,0.35)', accent: 'linear-gradient(90deg,#F43F5E,#FDA4AF)', link: '/pets?type=pigeon' },
-              { icon: '🐟', name: 'Fish',    count: '890+',   glow: 'rgba(16,185,129,0.3)',  bg: 'rgba(16,185,129,0.18)', border: 'rgba(110,231,183,0.35)', accent: 'linear-gradient(90deg,#10B981,#6EE7B7)', link: '/pets?type=fish' },
-              { icon: '🐰', name: 'Rabbits', count: '420+',   glow: 'rgba(245,158,11,0.3)',  bg: 'rgba(245,158,11,0.18)', border: 'rgba(253,230,138,0.35)', accent: 'linear-gradient(90deg,#F59E0B,#FDE68A)', link: '/pets?type=rabbit' },
+              { icon: '🐱', name: 'Cats',    count: '2,400+', glow: 'rgba(139,92,246,0.3)', bg: 'rgba(139,92,246,0.18)', border: 'rgba(167,139,250,0.3)', accent: 'linear-gradient(90deg,#7C3AED,#A78BFA)', link: '/pet-hub?type=cat' },
+              { icon: '🐶', name: 'Dogs',    count: '5,800+', glow: 'rgba(249,115,22,0.3)',  bg: 'rgba(249,115,22,0.18)', border: 'rgba(253,186,116,0.35)', accent: 'linear-gradient(90deg,#F97316,#FCD34D)', link: '/pet-hub?type=dog' },
+              { icon: '🦜', name: 'Birds',   count: '1,200+', glow: 'rgba(6,182,212,0.3)',   bg: 'rgba(6,182,212,0.18)', border: 'rgba(103,232,249,0.35)', accent: 'linear-gradient(90deg,#06B6D4,#A5F3FC)', link: '/pet-hub?type=bird' },
+              { icon: '🕊️', name: 'Pigeons', count: '340+',   glow: 'rgba(244,63,94,0.3)',   bg: 'rgba(244,63,94,0.18)', border: 'rgba(253,164,175,0.35)', accent: 'linear-gradient(90deg,#F43F5E,#FDA4AF)', link: '/pet-hub?type=pigeon' },
+              { icon: '🐟', name: 'Fish',    count: '890+',   glow: 'rgba(16,185,129,0.3)',  bg: 'rgba(16,185,129,0.18)', border: 'rgba(110,231,183,0.35)', accent: 'linear-gradient(90deg,#10B981,#6EE7B7)', link: '/pet-hub?type=fish' },
+              { icon: '🐰', name: 'Rabbits', count: '420+',   glow: 'rgba(245,158,11,0.3)',  bg: 'rgba(245,158,11,0.18)', border: 'rgba(253,230,138,0.35)', accent: 'linear-gradient(90deg,#F59E0B,#FDE68A)', link: '/pet-hub?type=rabbit' },
             ].map(c => (
               <Link
                 key={c.name}

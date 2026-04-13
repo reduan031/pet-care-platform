@@ -10,6 +10,7 @@ const MyPets = () => {
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingPet, setEditingPet] = useState(null);
 
   useEffect(() => {
     fetchMyPets();
@@ -39,8 +40,17 @@ const MyPets = () => {
 
       {showAddForm && (
         <AddPetWizard 
-          onComplete={() => { setShowAddForm(false); fetchMyPets(); }}
+          onComplete={() => { setShowAddForm(false); setEditingPet(null); fetchMyPets(); }}
           onCancel={() => setShowAddForm(false)}
+        />
+      )}
+
+      {editingPet && (
+        <AddPetWizard
+          petId={editingPet._id}
+          initialData={editingPet}
+          onComplete={() => { setEditingPet(null); fetchMyPets(); }}
+          onCancel={() => setEditingPet(null)}
         />
       )}
 
@@ -51,7 +61,7 @@ const MyPets = () => {
       ) : (
         <div className="products-grid">
           {pets.map(pet => (
-            <PetCard key={pet._id} pet={pet} />
+            <PetCard key={pet._id} pet={pet} onEdit={() => setEditingPet(pet)} />
           ))}
         </div>
       )}

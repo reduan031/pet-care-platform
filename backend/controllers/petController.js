@@ -3,9 +3,18 @@
 // ================================
 const Pet = require('../models/Pet');
 
+const normalizePetPayload = (body) => {
+  const payload = { ...body };
+  const firstPhoto = payload.photo || payload.photos?.[0] || payload.images?.[0];
+  if (firstPhoto) payload.photos = [firstPhoto];
+  delete payload.photo;
+  delete payload.images;
+  return payload;
+};
+
 exports.createPet = async (req, res) => {
   try {
-    const pet = await Pet.create({ ...req.body, userId: req.user._id });
+    const pet = await Pet.create({ ...normalizePetPayload(req.body), userId: req.user._id });
     res.status(201).json({ success: true, data: pet });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -55,7 +64,7 @@ exports.updatePet = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 
-    pet = await Pet.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    pet = await Pet.findByIdAndUpdate(req.params.id, normalizePetPayload(req.body), { new: true, runValidators: true });
     res.json({ success: true, data: pet });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

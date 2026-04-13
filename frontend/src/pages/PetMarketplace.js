@@ -112,8 +112,8 @@ const PetMarketplace = () => {
                     return (
                       <div key={pet._id} className="pet-card reveal">
                         <div className="pet-img-wrap">
-                          {pet.images?.[0] ? (
-                            <img src={pet.images[0]} alt={pet.name} />
+                          {(pet.photos?.[0] || pet.images?.[0]) ? (
+                            <img src={pet.photos?.[0] || pet.images?.[0]} alt={pet.name} />
                           ) : (
                             <div className="pet-img-ph">{icon}</div>
                           )}

@@ -52,6 +52,9 @@ const userSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   isAdmin: { type: Boolean, default: false },
   profilePhoto: { type: String, default: 'default-avatar.png' },
+  bio: { type: String, default: '' },
+  followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   isVerified: {
     type: Boolean,
     default: false

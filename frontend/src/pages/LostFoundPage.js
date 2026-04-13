@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../config/api';
 import './LostFoundPage.css';
+import { fileToDataUrl } from '../utils/file';
 
 const LostFoundPage = () => {
   const [reports, setReports] = useState([]);
@@ -14,7 +15,8 @@ const LostFoundPage = () => {
     date: new Date().toISOString().split('T')[0],
     description: '',
     contactPhone: '',
-    contactEmail: ''
+    contactEmail: '',
+    photo: ''
   });
 
   const fetchReports = React.useCallback(async () => {
@@ -34,6 +36,12 @@ const LostFoundPage = () => {
   }, [activeTab, fetchReports]);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const photo = await fileToDataUrl(file);
+    setFormData((prev) => ({ ...prev, photo }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,10 +51,20 @@ const LostFoundPage = () => {
         contactInfo: {
           phone: formData.contactPhone,
           email: formData.contactEmail
-        }
+        },
+        photos: formData.photo ? [formData.photo] : []
       });
       alert('Report submitted successfully!');
       setShowAddForm(false);
+      setFormData({
+        type: 'lost',
+        address: '',
+        date: new Date().toISOString().split('T')[0],
+        description: '',
+        contactPhone: '',
+        contactEmail: '',
+        photo: ''
+      });
       fetchReports();
     } catch (error) {
       alert('Failed to submit report. Please log in first.');
@@ -95,6 +113,12 @@ const LostFoundPage = () => {
             <textarea name="description" required rows="4" className="form-input" placeholder="Breed, color, collar, unique marks..." value={formData.description} onChange={handleChange}></textarea>
           </div>
 
+          <div className="form-group">
+            <label>Device Image</label>
+            <input type="file" accept="image/*" className="form-input" onChange={handleFileChange} />
+            {formData.photo && <img src={formData.photo} alt="Report preview" style={{ width: '100%', marginTop: 10, borderRadius: 12, maxHeight: 220, objectFit: 'cover' }} />}
+          </div>
+
           <div className="form-row-2">
             <div className="form-group">
               <label>Contact Phone</label>
@@ -120,6 +144,9 @@ const LostFoundPage = () => {
             reports.map(report => (
               <div key={report._id} className="lf-card">
                 <div className={`lf-badge ${report.type}`}>{report.type.toUpperCase()}</div>
+                {(report.photos?.[0] || report.petId?.photos?.[0]) && (
+                  <img src={report.photos?.[0] || report.petId?.photos?.[0]} alt="Lost or found pet" style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 12, marginBottom: 12 }} />
+                )}
                 <h4>{report.address}</h4>
                 <p className="lf-date">📅 {new Date(report.date).toLocaleDateString()}</p>
                 <p className="lf-desc">{report.description}</p>

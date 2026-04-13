@@ -3,7 +3,7 @@
 // ================================
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCart } from '../context/CartC/ontext';
+import { useCart } from '../context/CartContext';
 import api from '../config/api';
 
 const Checkout = () => {
@@ -33,9 +33,10 @@ const Checkout = () => {
     try {
       const orderData = {
         items: cart.map(item => ({
-          product: item._id,
+          _id: item._id,
           quantity: item.quantity,
-          price: item.discountPrice || item.price
+          price: item.discountPrice || item.price,
+          name: item.name || item.title
         })),
         shippingAddress: {
           street: formData.street,

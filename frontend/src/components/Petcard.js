@@ -4,7 +4,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const PetCard = ({ pet }) => {
+const PetCard = ({ pet, onEdit }) => {
   const getAgeString = () => {
     if (!pet?.age) return 'Unknown';
     if (typeof pet.age === 'string') return pet.age;
@@ -27,14 +27,14 @@ const PetCard = ({ pet }) => {
   return (
     <div className="pet-card">
       <Link to={`/pets/${pet._id}`} className="pet-link">
-        <div className="pet-image">
-          {pet.images && pet.images[0] ? (
-            <img src={pet.images[0]} alt={pet.name} />
+        <div className="pet-img-wrap">
+          {((pet.photos && pet.photos[0]) || (pet.images && pet.images[0])) ? (
+            <img src={pet.photos?.[0] || pet.images?.[0]} alt={pet.name} />
           ) : (
-            <div className="pet-placeholder">{getPetIcon()}</div>
+            <div className="pet-img-ph">{getPetIcon()}</div>
           )}
           {pet.forSale && (
-            <span className="for-sale-badge">For Sale</span>
+            <span className="for-sale-tag">For Sale</span>
           )}
         </div>
 
@@ -57,6 +57,11 @@ const PetCard = ({ pet }) => {
           </div>
         </div>
       </Link>
+      {onEdit && (
+        <button className="btn-ghost" style={{ width: '100%', justifyContent: 'center' }} onClick={onEdit}>
+          Edit Pet
+        </button>
+      )}
     </div>
   );
 };

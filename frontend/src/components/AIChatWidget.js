@@ -144,17 +144,54 @@ const AIChatWidget = () => {
           }
         }
         
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.isStreaming ? { ...msg, isStreaming: false } : msg
-          )
-        );
+        setMessages(prev => {
+          // Filter out duplicate greeting from streamed content
+          const GREETING_TEXT = "Hi there! 🐾 I am your PawVerse AI Assistant";
+          return prev.map(msg => {
+            if (msg.isStreaming && msg.content && msg.content.includes(GREETING_TEXT)) {
+              const hasGreeting = prev.some(m => 
+                !m.isStreaming && m.content && m.content.includes(GREETING_TEXT)
+              );
+              if (hasGreeting) {
+                const filtered = msg.content
+                  .split('\n')
+                  .filter(line => !line.includes(GREETING_TEXT) && line.trim() !== '')
+                  .join('\n')
+                  .trim();
+                return { ...msg, content: filtered, isStreaming: false };
+              }
+            }
+            return msg.isStreaming ? { ...msg, isStreaming: false } : msg;
+          });
+        });
         setIsStreaming(false);
         
       } else {
         const res = await api.post('/ai/chat', { messages: chatHistory });
-        const aiResponse = { role: 'assistant', content: res.data.data };
-        setMessages((prev) => [...prev, aiResponse]);
+        let responseContent = res.data.data;
+        
+        // Filter out duplicate greeting if it already exists in messages
+        const GREETING_TEXT = "Hi there! 🐾 I am your PawVerse AI Assistant";
+        if (responseContent && responseContent.includes(GREETING_TEXT)) {
+          // Check if greeting already exists in previous messages
+          const hasGreeting = messages.some(m => 
+            m.content && m.content.includes(GREETING_TEXT)
+          );
+          if (hasGreeting) {
+            // Remove greeting from response and keep only the actual answer
+            responseContent = responseContent
+              .split('\n')
+              .filter(line => !line.includes(GREETING_TEXT) && line.trim() !== '')
+              .join('\n')
+              .trim();
+          }
+        }
+        
+        // Only add response if there's actual content after filtering
+        if (responseContent && responseContent.trim()) {
+          const aiResponse = { role: 'assistant', content: responseContent };
+          setMessages((prev) => [...prev, aiResponse]);
+        }
       }
       
     } catch (err) {

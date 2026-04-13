@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/Authcontext';
-import { useCart } from '../context/CartC/ontext';
+import { useCart } from '../context/CartContext';
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -28,10 +28,15 @@ const Navbar = () => {
         {/* Links */}
         <div className="nav-links">
           <Link to="/products" className={isActive('/products')}>Shop</Link>
-          <Link to="/pets" className={isActive('/pets')}>Marketplace</Link>
+          <Link to="/marketplace-pro" className={isActive('/marketplace-pro')}>Marketplace</Link>
+          <Link to="/pet-social" className={isActive('/pet-social')}>Pet Social</Link>
+          <Link to="/pet-hub" className="nav-link">Pet Hub</Link>
           <Link to="/#services" className="nav-link">Services</Link>
           <Link to="/appointments" className={isActive('/appointments')}>Veterinary</Link>
           <Link to="/lost-found" className={isActive('/lost-found')}>Lost & Found</Link>
+          {isAuthenticated && user?.role === 'admin' && (
+            <Link to="/admin" className={isActive('/admin')}>Admin Panel</Link>
+          )}
           {isAuthenticated && (
             <Link to="/dashboard" className={isActive('/dashboard')}>Dashboard</Link>
           )}

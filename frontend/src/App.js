@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/Authcontext';
-import { CartProvider } from './context/CartC/ontext';
+import { CartProvider } from './context/CartContext';
+import { ChatProvider } from './context/ChatContext';
 
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -19,7 +20,13 @@ import Appointments from './pages/Appointments';
 import Dashboard from './pages/Dashboard';
 import LostFoundPage from './pages/LostFoundPage';
 import ProtectedRoute from './components/Protectedroute';
+import AdminRoute from './components/AdminRoute';
 import AIChatWidget from './components/AIChatWidget';
+import ChatButton from './components/ChatButton';
+import AdminPanel from './pages/AdminPanel';
+import PetTypeHub from './pages/PetTypeHub';
+import MarketplaceHub from './pages/MarketplaceHub';
+import PetSocial from './pages/PetSocial';
 
 import './App.css';
 
@@ -128,31 +135,40 @@ function App() {
     <Router>
       <AuthProvider>
         <CartProvider>
-          {/* Global UI layers */}
-          <BgCanvas />
-          <PawCursor />
-          <Loader />
-          <AIChatWidget />
+          <ChatProvider>
+            {/* Global UI layers */}
+            <BgCanvas />
+            <PawCursor />
+            <Loader />
+            <AIChatWidget />
 
-          <div className="App">
-            <Navbar />
-            <Routes>
-              <Route path="/"              element={<Home />} />
-              <Route path="/login"         element={<Login />} />
-              <Route path="/register"      element={<Register />} />
-              <Route path="/products"      element={<Products />} />
-              <Route path="/products/:id"  element={<ProductDetail />} />
-              <Route path="/pets"          element={<PetMarketplace />} />
-              <Route path="/pets/:id"      element={<PetDetail />} />
-              <Route path="/cart"          element={<Cart />} />
-              <Route path="/lost-found"    element={<LostFoundPage />} />
-              <Route path="/checkout"      element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-              <Route path="/my-orders"     element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
-              <Route path="/my-pets"       element={<ProtectedRoute><MyPets /></ProtectedRoute>} />
-              <Route path="/appointments"  element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
-              <Route path="/dashboard"     element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            </Routes>
-          </div>
+            <div className="App">
+              <Navbar />
+              <Routes>
+                <Route path="/"              element={<Home />} />
+                <Route path="/login"         element={<Login />} />
+                <Route path="/register"      element={<Register />} />
+                <Route path="/products"      element={<Products />} />
+                <Route path="/products/:id"  element={<ProductDetail />} />
+                <Route path="/pets"          element={<PetMarketplace />} />
+                <Route path="/pets/:id"      element={<PetDetail />} />
+                <Route path="/cart"          element={<Cart />} />
+                <Route path="/lost-found"    element={<LostFoundPage />} />
+                <Route path="/checkout"      element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+                <Route path="/my-orders"     element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
+                <Route path="/my-pets"       element={<ProtectedRoute><MyPets /></ProtectedRoute>} />
+                <Route path="/appointments"  element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
+                <Route path="/dashboard"     element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/admin"         element={<AdminRoute><AdminPanel /></AdminRoute>} />
+                <Route path="/pet-hub"       element={<PetTypeHub />} />
+                <Route path="/marketplace-pro" element={<MarketplaceHub />} />
+                <Route path="/pet-social" element={<PetSocial />} />
+              </Routes>
+            </div>
+            
+            {/* Global Chat Button */}
+            <ChatButton />
+          </ChatProvider>
         </CartProvider>
       </AuthProvider>
     </Router>

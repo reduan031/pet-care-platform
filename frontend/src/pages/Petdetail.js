@@ -50,8 +50,8 @@ const PetDetail = () => {
         <div className="detail-layout reveal">
           {/* Image */}
           <div className="detail-img-wrap">
-            {pet.images?.[0] ? (
-              <img src={pet.images[0]} alt={pet.name} />
+            {(pet.photos?.[0] || pet.images?.[0]) ? (
+              <img src={pet.photos?.[0] || pet.images?.[0]} alt={pet.name} />
             ) : (
               <div className="detail-img-ph">{icon}</div>
             )}

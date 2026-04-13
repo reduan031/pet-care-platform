@@ -14,30 +14,50 @@ exports.createAppointment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Pet not found' });
     }
 
-    if (petExists.owner.toString() !== req.user._id.toString()) {
+    // Check if pet has userId (owner) and user is authorized
+    if (!petExists.userId) {
+      return res.status(403).json({ success: false, message: 'Pet has no owner assigned' });
+    }
+    if (petExists.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Not authorized - not your pet' });
     }
 
-    const doctorExists = await User.findById(doctor);
-    if (!doctorExists || doctorExists.role !== 'doctor') {
-      return res.status(404).json({ success: false, message: 'Doctor not found' });
-    }
-
-    const existingAppointment = await Appointment.findOne({
-      doctor,
-      date,
-      timeSlot,
-      status: { $ne: 'cancelled' }
-    });
-
-    if (existingAppointment) {
-      return res.status(400).json({ success: false, message: 'Time slot already booked' });
+    // Doctor is optional - can be name string or ObjectId
+    // If provided but not a valid ObjectId, treat as doctorName (free text)
+    let doctorId = null;
+    let doctorName = null;
+    
+    if (doctor && doctor.trim()) {
+      // Check if doctor looks like a MongoDB ObjectId (24 hex chars)
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(doctor.trim());
+      
+      if (isObjectId) {
+        // It's an ObjectId - validate as user
+        const doctorExists = await User.findById(doctor.trim());
+        if (doctorExists && doctorExists.role === 'doctor') {
+          doctorId = doctor.trim();
+          // Check for existing appointment with this doctor
+          const existingAppointment = await Appointment.findOne({
+            doctor: doctorId,
+            date,
+            timeSlot,
+            status: { $ne: 'cancelled' }
+          });
+          if (existingAppointment) {
+            return res.status(400).json({ success: false, message: 'Time slot already booked' });
+          }
+        }
+      } else {
+        // It's a name - store as doctorName
+        doctorName = doctor.trim();
+      }
     }
 
     const appointment = await Appointment.create({
       user: req.user._id,
       pet,
-      doctor,
+      doctor: doctorId,
+      doctorName,
       appointmentType,
       date,
       timeSlot,
