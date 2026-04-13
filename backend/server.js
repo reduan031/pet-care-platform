@@ -35,10 +35,10 @@ io.on('connection', (socket) => {
 });
 
 // Middleware
-app.use(cors());
 // Allow base64 image payloads from Add Pet / Lost & Found / Pet Social forms.
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '100mb', extended: true }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
+app.use(cors());
 
 // Database Connection
 mongoose.connect(process.env.MONGODB_URI)
