@@ -1,7 +1,7 @@
 // ================================
 // FILE: frontend/src/pages/PetHub.js
 // ================================
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/Authcontext';
 import api from '../config/api';
 
