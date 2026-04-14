@@ -12,6 +12,15 @@ const PET_TYPES = [
   { id: 'pigeon', name: 'Pigeon', icon: '🕊️', color: '#96CEB4' },
 ];
 
+const SERVICES = [
+  { id: 'boarding', name: 'Pet Boarding', icon: '🏨', description: 'Safe and comfortable boarding for your pets' },
+  { id: 'grooming', name: 'Pet Grooming', icon: '✂️', description: 'Professional grooming services' },
+  { id: 'training', name: 'Pet Training', icon: '🎓', description: 'Expert training for your pets' },
+  { id: 'veterinary', name: 'Veterinary Care', icon: '🏥', description: 'Healthcare and medical services' },
+  { id: 'walking', name: 'Pet Walking', icon: '🚶', description: 'Daily walking services' },
+  { id: 'sitting', name: 'Pet Sitting', icon: '👤', description: 'In-home pet sitting' },
+];
+
 const PetHub = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -386,6 +395,47 @@ const PetHub = () => {
               ))}
             </div>
           )}
+
+          {/* Services Section */}
+          <div style={{ marginTop: '48px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 700, marginBottom: '24px' }}>
+              🛠️ Services
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+              {SERVICES.map((service) => (
+                <div
+                  key={service.id}
+                  className="glass-panel"
+                  style={{
+                    padding: '24px', borderRadius: '16px',
+                    transition: 'transform 0.3s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-5px)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                    <div style={{
+                      width: '56px', height: '56px', borderRadius: '16px',
+                      background: 'rgba(139,92,246,0.2)',
+                      border: '1px solid rgba(167,139,250,0.25)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '28px',
+                    }}>
+                      {service.icon}
+                    </div>
+                    <div>
+                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, margin: 0 }}>
+                        {service.name}
+                      </h3>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--muted)', margin: 0 }}>
+                    {service.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {showCategoryModal && (
             <div style={{
