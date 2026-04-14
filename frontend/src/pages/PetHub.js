@@ -62,9 +62,9 @@ const PetHub = () => {
     }
   };
 
-  const fetchProducts = async (categoryId) => {
+  const fetchProducts = async (categoryName) => {
     try {
-      const response = await api.get(`/products?category=${categoryId}`);
+      const response = await api.get(`/products?category=${categoryName}`);
       setProducts(response.data.data);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -79,7 +79,7 @@ const PetHub = () => {
 
   const handleCategoryClick = (category) => {
     setSelectedCategory(category);
-    fetchProducts(category._id);
+    fetchProducts(category.name);
   };
 
   const handleBackToPets = () => {
@@ -166,7 +166,7 @@ const PetHub = () => {
         sellerId: user._id
       });
       
-      fetchProducts(selectedCategory._id);
+      fetchProducts(selectedCategory.name);
       setShowProductModal(false);
       setProductFormData({
         name: '',
