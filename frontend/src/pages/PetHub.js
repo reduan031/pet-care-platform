@@ -45,6 +45,7 @@ const PetHub = () => {
     price: '',
     stock: '',
     images: '',
+    imageFiles: [],
     brand: '',
     specifications: {}
   });
@@ -101,6 +102,11 @@ const PetHub = () => {
     setProductFormData({ ...productFormData, [e.target.name]: e.target.value });
   };
 
+  const handleImageFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setProductFormData({ ...productFormData, imageFiles: files });
+  };
+
   const handleCategorySubmit = async (e) => {
     e.preventDefault();
     try {
@@ -131,7 +137,24 @@ const PetHub = () => {
   const handleProductSubmit = async (e) => {
     e.preventDefault();
     try {
-      const images = productFormData.images.split(',').map(img => img.trim()).filter(img => img);
+      let images = [];
+      
+      // Convert uploaded files to base64
+      if (productFormData.imageFiles && productFormData.imageFiles.length > 0) {
+        const filePromises = productFormData.imageFiles.map(file => {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        });
+        
+        images = await Promise.all(filePromises);
+      } else if (productFormData.images) {
+        // Fallback to URL input if no files uploaded
+        images = productFormData.images.split(',').map(img => img.trim()).filter(img => img);
+      }
       
       await api.post('/products', {
         ...productFormData,
@@ -151,6 +174,7 @@ const PetHub = () => {
         price: '',
         stock: '',
         images: '',
+        imageFiles: [],
         brand: '',
         specifications: {}
       });
@@ -777,20 +801,25 @@ const PetHub = () => {
 
                 <div style={{ marginBottom: '24px' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
-                    Image URLs (comma-separated)
+                    Upload Product Images
                   </label>
-                  <textarea
-                    name="images"
-                    value={productFormData.images}
-                    onChange={handleProductInputChange}
-                    placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                    rows={2}
+                  <input
+                    type="file"
+                    name="imageFiles"
+                    onChange={handleImageFileChange}
+                    accept="image/*"
+                    multiple
                     style={{
                       width: '100%', padding: '12px', borderRadius: '10px',
                       border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(255,255,255,0.05)',
-                      color: 'white', fontSize: '14px', resize: 'vertical',
+                      color: 'white', fontSize: '14px',
                     }}
                   />
+                  {productFormData.imageFiles && productFormData.imageFiles.length > 0 && (
+                    <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--muted)' }}>
+                      {productFormData.imageFiles.length} file(s) selected
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', gap: '12px' }}>
@@ -815,6 +844,7 @@ const PetHub = () => {
                         price: '',
                         stock: '',
                         images: '',
+                        imageFiles: [],
                         brand: '',
                         specifications: {}
                       });
