@@ -106,7 +106,16 @@ const PetHub = () => {
       setCategoryFormData({ name: '', displayName: '', icon: '📦', description: '', petType: selectedPetType });
     } catch (error) {
       console.error('Error saving category:', error);
-      alert(error.response?.data?.message || 'Failed to save category');
+      console.error('Error response:', error.response);
+      console.error('Error data:', error.response?.data);
+      
+      if (error.response?.status === 401) {
+        alert('Please log in to save categories');
+      } else if (error.response?.status === 403) {
+        alert('Only admins can save categories');
+      } else {
+        alert(error.response?.data?.message || `Failed to save category: ${error.message}`);
+      }
     }
   };
 
