@@ -26,7 +26,7 @@ const {
   getSuggestions,
 } = require('../controllers/petSocialController');
 
-router.get('/feed', getFeed);
+router.get('/feed', protect, getFeed);
 router.post('/posts', protect, createPost);
 router.post('/posts/:id/like', protect, toggleLike);
 router.post('/posts/:id/comment', protect, addComment);
@@ -39,11 +39,11 @@ router.post('/messages', protect, sendMessage);
 router.get('/messages/:conversationId', protect, getMessages);
 router.get('/conversations', protect, getConversations);
 
-router.get('/groups', getGroups);
+router.get('/groups', protect, getGroups);
 router.post('/groups', protect, createGroup);
 router.post('/groups/:groupId/join', protect, joinGroup);
 
-router.get('/events', getEvents);
+router.get('/events', protect, getEvents);
 router.post('/events', protect, createEvent);
 router.post('/events/:eventId/rsvp', protect, rsvpEvent);
 

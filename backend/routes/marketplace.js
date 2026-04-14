@@ -10,9 +10,9 @@ const {
   createPaymentIntent,
 } = require('../controllers/marketplaceController');
 
-router.get('/listings', searchListings);
+router.get('/listings', protect, searchListings);
 router.post('/listings', protect, createListing);
-router.get('/listings/:id', getListing);
+router.get('/listings/:id', protect, getListing);
 router.post('/listings/:id/rate', protect, rateSeller);
 router.post('/listings/:id/message-owner', protect, messageOwner);
 router.post('/payments/intent', protect, createPaymentIntent);
