@@ -55,6 +55,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/pets', require('./routes/pets'));
 app.use('/api/products', require('./routes/products'));
+app.use('/api/categories', require('./routes/categories'));
 app.use('/api/marketplace', require('./routes/marketplace'));
 app.use('/api/pet-social', require('./routes/petSocial'));
 app.use('/api/services', require('./routes/services'));

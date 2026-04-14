@@ -6,6 +6,7 @@ const QUICK_LINKS = [
   { to: '/my-pets',      icon: '🐾', title: 'My Pets',      desc: 'Manage your beloved companions' },
   { to: '/my-orders',    icon: '📦', title: 'My Orders',     desc: 'Track your order history' },
   { to: '/appointments', icon: '📅', title: 'Appointments',  desc: 'View vet appointments' },
+  { to: '/pet-hub',      icon: '🏠', title: 'Pet Hub',       desc: 'Manage product categories' },
   { to: '/products?from=dashboard', icon: '🛍️', title: 'Shop',          desc: 'Browse premium products' },
   { to: '/marketplace-pro?from=dashboard', icon: '🏪', title: 'Marketplace',   desc: 'Sell, Pet boarding, and adopt by location' },
   { to: '/pet-social?from=dashboard', icon: '📱', title: 'Pet Social',    desc: 'Connect, share, and discover with pet lovers' },

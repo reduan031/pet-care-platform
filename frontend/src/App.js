@@ -24,7 +24,7 @@ import AdminRoute from './components/AdminRoute';
 import AIChatWidget from './components/AIChatWidget';
 import ChatButton from './components/ChatButton';
 import AdminPanel from './pages/AdminPanel';
-import PetTypeHub from './pages/PetTypeHub';
+import PetHub from './pages/PetHub';
 import MarketplaceHub from './pages/MarketplaceHub';
 import PetSocial from './pages/PetSocial';
 
@@ -160,7 +160,7 @@ function App() {
                 <Route path="/appointments"  element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
                 <Route path="/dashboard"     element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/admin"         element={<AdminRoute><AdminPanel /></AdminRoute>} />
-                <Route path="/pet-hub"       element={<PetTypeHub />} />
+                <Route path="/pet-hub"       element={<ProtectedRoute><PetHub /></ProtectedRoute>} />
                 <Route path="/marketplace-pro" element={<MarketplaceHub />} />
                 <Route path="/pet-social" element={<PetSocial />} />
               </Routes>
