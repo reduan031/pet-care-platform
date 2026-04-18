@@ -4,7 +4,7 @@ import { useAuth } from '../context/Authcontext';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: '', email: '', password: '', confirmPassword: '', phone: '', address: ''
+    name: '', email: '', password: '', confirmPassword: '', phone: '', address: '', role: 'user'
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,6 +45,7 @@ const Register = () => {
       password: formData.password,
       phone: formData.phone,
       address: formData.address,
+      role: formData.role,
     });
     setLoading(false);
     if (result.success) navigate('/');
@@ -98,6 +99,16 @@ const Register = () => {
               <label>City / Address</label>
               <input type="text" name="address" className="form-input" placeholder="Dhaka, Bangladesh" value={formData.address} onChange={handleChange} />
             </div>
+          </div>
+
+          <div className="form-field">
+            <label>Account Type</label>
+            <select name="role" className="form-input" value={formData.role} onChange={handleChange} style={{ cursor: 'pointer' }}>
+              <option value="user">🐾 Pet Parent (User)</option>
+              <option value="seller">🏪 Seller (Sell products)</option>
+              <option value="doctor">👨‍⚕️ Doctor (Veterinary services)</option>
+              <option value="admin">⚠️ Admin (Restricted)</option>
+            </select>
           </div>
 
           <button
