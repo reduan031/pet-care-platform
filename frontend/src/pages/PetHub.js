@@ -121,6 +121,15 @@ const PetHub = () => {
     fetchProducts(selectedPetType, category.name.split('-')[1]);
   };
 
+  const handleCategoryAdd = (category, e) => {
+    e.stopPropagation(); // Prevent triggering the card click
+    setSelectedCategory(category);
+    setSelectedService(null);
+    setEditingProduct(null);
+    resetProductForm();
+    setShowProductModal(true);
+  };
+
   const handleServiceClick = (service) => {
     setSelectedService(service);
     setSelectedCategory(null);
@@ -452,6 +461,28 @@ const PetHub = () => {
                       <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '16px' }}>
                         {category.description}
                       </p>
+                    )}
+
+                    {canEdit && (
+                      <button
+                        onClick={(e) => handleCategoryAdd(category, e)}
+                        style={{
+                          padding: '8px 16px',
+                          background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s, box-shadow 0.2s',
+                          width: '100%',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                        onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                      >
+                        ➕ Add Product
+                      </button>
                     )}
                   </div>
                 ))}
