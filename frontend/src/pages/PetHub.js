@@ -39,7 +39,7 @@ const PetHub = () => {
   const { user } = useAuth();
   const location = useLocation();
   const fromDashboard = new URLSearchParams(location.search).get('from') === 'dashboard';
-  const canEdit = fromDashboard && (user?.role === 'seller' || user?.role === 'admin');
+  const canEdit = fromDashboard && user;
 
   const [selectedPetType, setSelectedPetType] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
