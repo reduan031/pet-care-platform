@@ -160,7 +160,7 @@ function App() {
                 <Route path="/appointments"  element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
                 <Route path="/dashboard"     element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/admin"         element={<AdminRoute><AdminPanel /></AdminRoute>} />
-                <Route path="/pet-hub"       element={<ProtectedRoute><PetHub /></ProtectedRoute>} />
+                <Route path="/pet-hub"       element={<PetHub />} />
                 <Route path="/marketplace-pro" element={<MarketplaceHub />} />
                 <Route path="/pet-social" element={<PetSocial />} />
               </Routes>

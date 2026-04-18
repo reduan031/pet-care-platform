@@ -5,15 +5,22 @@ const Product = require('../models/Product');
 
 exports.createProduct = async (req, res) => {
   try {
+    console.log('Creating product with data:', req.body);
+    console.log('User:', req.user);
     const product = await Product.create({ ...req.body, sellerId: req.user._id });
+    console.log('Product created successfully:', product);
     res.status(201).json({ success: true, data: product });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Error creating product:', error);
+    console.error('Error details:', error.message);
+    console.error('Validation errors:', error.errors);
+    res.status(500).json({ success: false, message: error.message, details: error.errors });
   }
 };
 
 exports.getProducts = async (req, res) => {
   try {
+    console.log('Getting products with query:', req.query);
     const { category, petType, minPrice, maxPrice, search } = req.query;
     let query = { isActive: true };
 

@@ -1,0 +1,27 @@
+cd backend
+npm run dev
+
+cd frontend
+npm start
+
+# সব পরিবর্তন একবারে দেখুন
+git status
+
+# সব পরিবর্তন একসাথে যোগ করুন (নতুন + ডিলিট + এডিট)
+git add --all
+# অথবা
+git add -A
+
+# কমিট করুন
+git commit -m "Update: একাধিক পরিবর্তন করা হয়েছে"
+
+# GitHub এ আপলোড করুন
+git push
+
+or this one king line 
+
+git add -A && git commit -m "আপডেটের বিবরণ" && git push
+
+
+https://pet-care-backend.onrender.com
+

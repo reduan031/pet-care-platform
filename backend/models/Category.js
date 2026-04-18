@@ -25,7 +25,7 @@ const categorySchema = new mongoose.Schema({
   },
   petType: {
     type: String,
-    enum: ['cat', 'dog', 'bird', 'pigeon', 'all'],
+    enum: ['dog', 'cat', 'bird', 'fish', 'rabbit', 'hamster', 'reptile', 'horse', 'all'],
     default: 'all'
   },
   isActive: {

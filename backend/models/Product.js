@@ -19,7 +19,7 @@ const productSchema = new mongoose.Schema({
   },
   petType: {
     type: String,
-    enum: ['cat', 'dog', 'bird', 'pigeon', 'all'],
+    enum: ['dog', 'cat', 'bird', 'fish', 'rabbit', 'hamster', 'reptile', 'horse', 'all'],
     required: true
   },
   subCategory: String,
@@ -41,7 +41,7 @@ const productSchema = new mongoose.Schema({
   },
   images: {
     type: [String],
-    validate: [arr => arr.length > 0, 'At least one image is required']
+    default: []
   },
   specifications: {
     type: Map,

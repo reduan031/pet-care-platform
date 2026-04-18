@@ -1,15 +1,29 @@
 // ================================
 // FILE: frontend/src/pages/PetHub.js
 // ================================
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/Authcontext';
+import { useLocation } from 'react-router-dom';
 import api from '../config/api';
 
 const PET_TYPES = [
-  { id: 'cat', name: 'Cat', icon: '🐱', color: '#FF6B9D' },
   { id: 'dog', name: 'Dog', icon: '🐶', color: '#4ECDC4' },
+  { id: 'cat', name: 'Cat', icon: '🐱', color: '#FF6B9D' },
   { id: 'bird', name: 'Bird', icon: '🦜', color: '#45B7D1' },
-  { id: 'pigeon', name: 'Pigeon', icon: '🕊️', color: '#96CEB4' },
+  { id: 'fish', name: 'Fish', icon: '🐠', color: '#FFE66D' },
+  { id: 'rabbit', name: 'Rabbit', icon: '🐰', color: '#96CEB4' },
+  { id: 'horse', name: 'Horse', icon: '🐴', color: '#8B4513' }
+];
+
+const CATEGORIES = [
+  { id: 'food', displayName: 'Food', icon: '🍽️', description: 'Premium nutrition for your pet' },
+  { id: 'accessories', displayName: 'Accessories', icon: '🎀', description: 'Collars, beds, leashes, and more' },
+  { id: 'pharmacy', displayName: 'Pharmacy / Medicine', icon: '💊', description: 'Dewormers, vitamins, first aid' },
+  { id: 'grooming', displayName: 'Grooming', icon: '🧼', description: 'Grooming supplies for your pet' },
+  { id: 'housing', displayName: 'Housing / Bedding', icon: '🏠', description: 'Homes, cages, tanks, bedding' },
+  { id: 'toys', displayName: 'Toys', icon: '�', description: 'Fun and engaging toys' },
+  { id: 'training', displayName: 'Training', icon: '🎓', description: 'Pads, clickers, sprays' },
+  { id: 'health', displayName: 'Health & Wellness', icon: '💪', description: 'Supplements, dental care, wellness' }
 ];
 
 const SERVICES = [
@@ -17,28 +31,24 @@ const SERVICES = [
   { id: 'grooming', name: 'Pet Grooming', icon: '✂️', description: 'Professional grooming services' },
   { id: 'training', name: 'Pet Training', icon: '🎓', description: 'Expert training for your pets' },
   { id: 'veterinary', name: 'Veterinary Care', icon: '🏥', description: 'Healthcare and medical services' },
-  { id: 'walking', name: 'Pet Walking', icon: '🚶', description: 'Daily walking services' },
+  { id: 'walking', name: 'Pet Walking', icon: '�', description: 'Daily walking services' },
   { id: 'sitting', name: 'Pet Sitting', icon: '👤', description: 'In-home pet sitting' },
 ];
 
 const PetHub = () => {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const location = useLocation();
+  const fromDashboard = new URLSearchParams(location.search).get('from') === 'dashboard';
+  const canEdit = fromDashboard && (user?.role === 'seller' || user?.role === 'admin');
+
   const [selectedPetType, setSelectedPetType] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [showProductModal, setShowProductModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedService, setSelectedService] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [categoryFormData, setCategoryFormData] = useState({
-    name: '',
-    displayName: '',
-    icon: '📦',
-    description: '',
-    petType: 'cat'
-  });
+  const [loading, setLoading] = useState(false);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [productFormData, setProductFormData] = useState({
     name: '',
     description: '',
@@ -46,57 +56,107 @@ const PetHub = () => {
     stock: '',
     images: '',
     imageFiles: [],
-    brand: '',
-    specifications: {}
+    brand: ''
   });
+  const hasProcessedUrlParam = useRef(false);
 
   const fetchCategories = async (petType) => {
     setLoading(true);
     try {
       const response = await api.get(`/categories?petType=${petType}`);
-      setCategories(response.data.data);
+      const categoriesData = response.data.data;
+      
+      // If API returns empty array, use fallback categories
+      if (!categoriesData || categoriesData.length === 0) {
+        const fallbackCats = CATEGORIES.map(cat => ({
+          _id: `${petType}-${cat.id}`,
+          name: `${petType}-${cat.id}`,
+          displayName: cat.displayName,
+          icon: cat.icon,
+          description: cat.description,
+          petType: petType
+        }));
+        setCategories(fallbackCats);
+      } else {
+        setCategories(categoriesData);
+      }
     } catch (error) {
       console.error('Error fetching categories:', error);
+      const fallbackCats = CATEGORIES.map(cat => ({
+        _id: `${petType}-${cat.id}`,
+        name: `${petType}-${cat.id}`,
+        displayName: cat.displayName,
+        icon: cat.icon,
+        description: cat.description,
+        petType: petType
+      }));
+      setCategories(fallbackCats);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchProducts = async (categoryName) => {
+  const fetchProducts = async (petType, categoryName) => {
     try {
-      const response = await api.get(`/products?category=${categoryName}`);
+      const categoryId = `${petType}-${categoryName}`;
+      const response = await api.get(`/products?petType=${petType}&category=${categoryId}`);
       setProducts(response.data.data);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setProducts([]);
     }
   };
 
   const handlePetTypeSelect = (petType) => {
     setSelectedPetType(petType);
-    setCategoryFormData({ ...categoryFormData, petType: petType });
+    setSelectedCategory(null);
+    setSelectedService(null);
+    setProducts([]);
     fetchCategories(petType);
   };
 
   const handleCategoryClick = (category) => {
     setSelectedCategory(category);
-    fetchProducts(category.name);
+    setSelectedService(null);
+    fetchProducts(selectedPetType, category.name.split('-')[1]);
+  };
+
+  const handleServiceClick = (service) => {
+    setSelectedService(service);
+    setSelectedCategory(null);
+    setProducts([]);
   };
 
   const handleBackToPets = () => {
     setSelectedPetType(null);
     setSelectedCategory(null);
+    setSelectedService(null);
     setCategories([]);
     setProducts([]);
   };
 
   const handleBackToCategories = () => {
     setSelectedCategory(null);
+    setSelectedService(null);
     setProducts([]);
   };
 
-  const handleCategoryInputChange = (e) => {
-    setCategoryFormData({ ...categoryFormData, [e.target.name]: e.target.value });
-  };
+  // Handle URL parameter for auto-selecting pet type
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const typeParam = urlParams.get('type');
+    if (typeParam && !hasProcessedUrlParam.current) {
+      const petType = PET_TYPES.find(p => p.id === typeParam);
+      if (petType) {
+        hasProcessedUrlParam.current = true;
+        setSelectedPetType(petType.id);
+        setSelectedCategory(null);
+        setSelectedService(null);
+        setProducts([]);
+        fetchCategories(petType.id);
+      }
+    }
+  }, [location.search]);
 
   const handleProductInputChange = (e) => {
     setProductFormData({ ...productFormData, [e.target.name]: e.target.value });
@@ -107,39 +167,46 @@ const PetHub = () => {
     setProductFormData({ ...productFormData, imageFiles: files });
   };
 
-  const handleCategorySubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingCategory) {
-        await api.put(`/categories/${editingCategory._id}`, categoryFormData);
-      } else {
-        await api.post('/categories', categoryFormData);
-      }
-      fetchCategories(selectedPetType);
-      setShowCategoryModal(false);
-      setEditingCategory(null);
-      setCategoryFormData({ name: '', displayName: '', icon: '📦', description: '', petType: selectedPetType });
-    } catch (error) {
-      console.error('Error saving category:', error);
-      console.error('Error response:', error.response);
-      console.error('Error data:', error.response?.data);
-      
-      if (error.response?.status === 401) {
-        alert('Please log in to save categories');
-      } else if (error.response?.status === 403) {
-        alert('Only admins can save categories');
-      } else {
-        alert(error.response?.data?.message || `Failed to save category: ${error.message}`);
-      }
-    }
-  };
-
   const handleProductSubmit = async (e) => {
     e.preventDefault();
+    
+    console.log('Product form data:', productFormData);
+    console.log('User:', user);
+    console.log('Selected pet type:', selectedPetType);
+    console.log('Selected category:', selectedCategory);
+    console.log('Can edit:', canEdit);
+    
+    // Validate required fields
+    if (!productFormData.name || !productFormData.name.trim()) {
+      alert('Product name is required');
+      return;
+    }
+    if (!productFormData.description || !productFormData.description.trim()) {
+      alert('Description is required');
+      return;
+    }
+    if (!productFormData.price || Number(productFormData.price) <= 0) {
+      alert('Price is required and must be greater than 0');
+      return;
+    }
+    if (!productFormData.stock || Number(productFormData.stock) < 0) {
+      alert('Stock is required and must be 0 or greater');
+      return;
+    }
+    
+    if (!user || !user._id) {
+      alert('You must be logged in to add products');
+      return;
+    }
+    
+    if (user.role !== 'seller' && user.role !== 'admin') {
+      alert('You must be logged in as a seller or admin to add products');
+      return;
+    }
+    
     try {
       let images = [];
       
-      // Convert uploaded files to base64
       if (productFormData.imageFiles && productFormData.imageFiles.length > 0) {
         const filePromises = productFormData.imageFiles.map(file => {
           return new Promise((resolve, reject) => {
@@ -152,63 +219,96 @@ const PetHub = () => {
         
         images = await Promise.all(filePromises);
       } else if (productFormData.images) {
-        // Fallback to URL input if no files uploaded
         images = productFormData.images.split(',').map(img => img.trim()).filter(img => img);
       }
+
+      const categoryId = `${selectedPetType}-${selectedCategory.name.split('-')[1]}`;
       
-      await api.post('/products', {
-        ...productFormData,
-        category: selectedCategory.name,
-        petType: selectedPetType,
+      const productData = {
+        name: productFormData.name,
+        description: productFormData.description,
         price: Number(productFormData.price),
         stock: Number(productFormData.stock),
+        brand: productFormData.brand,
+        category: categoryId,
+        petType: selectedPetType,
         images,
         sellerId: user._id
-      });
+      };
       
-      fetchProducts(selectedCategory.name);
+      console.log('Sending product data:', productData);
+
+      if (editingProduct) {
+        await api.put(`/products/${editingProduct._id}`, productData);
+      } else {
+        await api.post('/products', productData);
+      }
+      
+      fetchProducts(selectedPetType, selectedCategory.name.split('-')[1]);
       setShowProductModal(false);
-      setProductFormData({
-        name: '',
-        description: '',
-        price: '',
-        stock: '',
-        images: '',
-        imageFiles: [],
-        brand: '',
-        specifications: {}
-      });
+      setEditingProduct(null);
+      resetProductForm();
     } catch (error) {
       console.error('Error saving product:', error);
-      alert(error.response?.data?.message || 'Failed to save product');
+      console.error('Error response:', error.response);
+      console.error('Error message:', error.message);
+      
+      const errorData = error.response?.data;
+      const errorMessage = errorData?.message || error.message || 'Failed to save product';
+      const errorDetails = errorData?.details;
+      
+      let alertMessage = `Error: ${errorMessage}`;
+      if (errorDetails) {
+        alertMessage += `\nDetails: ${JSON.stringify(errorDetails)}`;
+      }
+      
+      if (errorMessage.includes('Not authorized') || errorMessage.includes('403')) {
+        alert('You must be logged in as a seller or admin to add products');
+      } else if (errorMessage.includes('401')) {
+        alert('You must be logged in to add products');
+      } else {
+        alert(alertMessage);
+      }
     }
   };
 
-  const handleEditCategory = (category) => {
-    setEditingCategory(category);
-    setCategoryFormData({
-      name: category.name,
-      displayName: category.displayName,
-      icon: category.icon,
-      description: category.description,
-      petType: category.petType
+  const resetProductForm = () => {
+    setProductFormData({
+      name: '',
+      description: '',
+      price: '',
+      stock: '',
+      images: '',
+      imageFiles: [],
+      brand: ''
     });
-    setShowCategoryModal(true);
   };
 
-  const handleDeleteCategory = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this category?')) return;
+  const handleEditProduct = (product) => {
+    setEditingProduct(product);
+    setProductFormData({
+      name: product.name,
+      description: product.description,
+      price: product.price.toString(),
+      stock: product.stock.toString(),
+      images: product.images?.join(', '),
+      imageFiles: [],
+      brand: product.brand || ''
+    });
+    setShowProductModal(true);
+  };
+
+  const handleDeleteProduct = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this product?')) return;
     
     try {
-      await api.delete(`/categories/${id}`);
-      fetchCategories(selectedPetType);
+      await api.delete(`/products/${id}`);
+      fetchProducts(selectedPetType, selectedCategory.name.split('-')[1]);
     } catch (error) {
-      console.error('Error deleting category:', error);
-      alert(error.response?.data?.message || 'Failed to delete category');
+      console.error('Error deleting product:', error);
+      alert(error.response?.data?.message || 'Failed to delete product');
     }
   };
-
-  const ICON_OPTIONS = ['🍽️', '🧸', '🎀', '👕', '🧼', '💊', '🏠', '🐾', '📦', '🎁', '⚡', '🌟'];
 
   // Pet Type Selection View
   if (!selectedPetType) {
@@ -219,7 +319,7 @@ const PetHub = () => {
             <span className="label-tag">🏠 Pet Hub</span>
             <h1 className="display-lg">Select Pet Type</h1>
             <p style={{ color: 'var(--muted)', marginTop: '10px' }}>
-              Choose a pet type to manage its categories and products
+              Choose a pet type to browse products and services
             </p>
           </div>
 
@@ -257,7 +357,7 @@ const PetHub = () => {
                   {pet.name}
                 </h2>
                 <p style={{ fontSize: '14px', color: 'var(--muted)', marginTop: '8px' }}>
-                  Manage {pet.name.toLowerCase()} categories
+                  View {pet.name.toLowerCase()} products and services
                 </p>
               </div>
             ))}
@@ -267,8 +367,8 @@ const PetHub = () => {
     );
   }
 
-  // Category Selection View
-  if (!selectedCategory) {
+  // Category and Service Selection View
+  if (!selectedCategory && !selectedService) {
     return (
       <div className="dashboard-page">
         <div className="container">
@@ -290,62 +390,93 @@ const PetHub = () => {
             </button>
             <span className="label-tag">🏠 Pet Hub</span>
             <h1 className="display-lg">
-              {PET_TYPES.find(p => p.id === selectedPetType)?.icon} {PET_TYPES.find(p => p.id === selectedPetType)?.name} Categories
+              {PET_TYPES.find(p => p.id === selectedPetType)?.icon} {PET_TYPES.find(p => p.id === selectedPetType)?.name} Products & Services
             </h1>
             <p style={{ color: 'var(--muted)', marginTop: '10px' }}>
-              Select a category to manage products
+              Select a category or service to browse
             </p>
           </div>
 
-          {isAdmin && (
-            <div style={{ marginBottom: '32px' }}>
-              <button
-                onClick={() => setShowCategoryModal(true)}
-                style={{
-                  padding: '12px 24px',
-                  background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontSize: '16px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-              >
-                ➕ Add New Category
-              </button>
-            </div>
-          )}
+          <div style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 700, marginBottom: '24px' }}>
+              📦 Product Categories
+            </h2>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                <div style={{ fontSize: '48px' }}>⏳</div>
+                <p>Loading categories...</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+                {categories.map((category) => (
+                  <div
+                    key={category._id || category.name}
+                    onClick={() => handleCategoryClick(category)}
+                    className="glass-panel"
+                    style={{
+                      padding: '24px', borderRadius: '16px',
+                      transition: 'transform 0.3s, border-color 0.3s',
+                      cursor: 'pointer',
+                      border: '2px solid transparent',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.transform = 'translateY(-5px)';
+                      e.currentTarget.style.borderColor = PET_TYPES.find(p => p.id === selectedPetType)?.color;
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.borderColor = 'transparent';
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+                      <div style={{
+                        width: '64px', height: '64px', borderRadius: '16px',
+                        background: 'rgba(139,92,246,0.2)',
+                        border: '1px solid rgba(167,139,250,0.25)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '32px',
+                      }}>
+                        {category.icon}
+                      </div>
+                      <div>
+                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, margin: 0 }}>
+                          {category.displayName}
+                        </h3>
+                        <p style={{ fontSize: '13px', color: 'var(--muted)', margin: '4px 0 0 0' }}>
+                          Click to view products →
+                        </p>
+                      </div>
+                    </div>
 
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '60px 0' }}>
-              <div style={{ fontSize: '48px' }}>⏳</div>
-              <p>Loading categories...</p>
-            </div>
-          ) : (
+                    {category.description && (
+                      <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '16px' }}>
+                        {category.description}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Services Section */}
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 700, marginBottom: '24px' }}>
+              🛠️ Services
+            </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-              {categories.map((category) => (
+              {SERVICES.map((service) => (
                 <div
-                  key={category._id}
-                  onClick={() => handleCategoryClick(category)}
+                  key={service.id}
+                  onClick={() => handleServiceClick(service)}
                   className="glass-panel"
                   style={{
                     padding: '24px', borderRadius: '16px',
-                    transition: 'transform 0.3s, border-color 0.3s',
+                    transition: 'transform 0.3s',
                     cursor: 'pointer',
-                    border: '2px solid transparent',
                   }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.transform = 'translateY(-5px)';
-                    e.currentTarget.style.borderColor = PET_TYPES.find(p => p.id === selectedPetType)?.color;
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.borderColor = 'transparent';
-                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-5px)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
                     <div style={{
@@ -355,245 +486,31 @@ const PetHub = () => {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '32px',
                     }}>
-                      {category.icon}
+                      {service.icon}
                     </div>
                     <div>
                       <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, margin: 0 }}>
-                        {category.displayName}
+                        {service.name}
                       </h3>
                       <p style={{ fontSize: '13px', color: 'var(--muted)', margin: '4px 0 0 0' }}>
-                        Click to view products →
+                        Click to view services →
                       </p>
                     </div>
                   </div>
 
-                  {category.description && (
-                    <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '16px' }}>
-                      {category.description}
-                    </p>
-                  )}
-
-                  {isAdmin && (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleEditCategory(category); }}
-                        style={{
-                          flex: 1,
-                          padding: '8px 16px',
-                          background: 'rgba(139,92,246,0.1)',
-                          border: '1px solid rgba(139,92,246,0.3)',
-                          borderRadius: '8px',
-                          color: 'var(--violet-light)',
-                          fontSize: '14px',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,92,246,0.2)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(139,92,246,0.1)'}
-                      >
-                        ✏️ Edit
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDeleteCategory(category._id); }}
-                        style={{
-                          flex: 1,
-                          padding: '8px 16px',
-                          background: 'rgba(239,68,68,0.1)',
-                          border: '1px solid rgba(239,68,68,0.3)',
-                          borderRadius: '8px',
-                          color: '#ef4444',
-                          fontSize: '14px',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.2)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
-                      >
-                        🗑️ Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Services Section */}
-          <div style={{ marginTop: '48px' }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 700, marginBottom: '24px' }}>
-              🛠️ Services
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-              {SERVICES.map((service) => (
-                <div
-                  key={service.id}
-                  className="glass-panel"
-                  style={{
-                    padding: '24px', borderRadius: '16px',
-                    transition: 'transform 0.3s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-5px)'}
-                  onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-                    <div style={{
-                      width: '56px', height: '56px', borderRadius: '16px',
-                      background: 'rgba(139,92,246,0.2)',
-                      border: '1px solid rgba(167,139,250,0.25)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '28px',
-                    }}>
-                      {service.icon}
-                    </div>
-                    <div>
-                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, margin: 0 }}>
-                        {service.name}
-                      </h3>
-                    </div>
-                  </div>
-                  <p style={{ fontSize: '13px', color: 'var(--muted)', margin: 0 }}>
+                  <p style={{ fontSize: '14px', color: 'var(--muted)' }}>
                     {service.description}
                   </p>
                 </div>
               ))}
             </div>
           </div>
-
-          {showCategoryModal && (
-            <div style={{
-              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-              background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              zIndex: 1000,
-            }}>
-              <div className="glass-panel" style={{
-                width: '90%', maxWidth: '500px', padding: '32px', borderRadius: '20px',
-                maxHeight: '90vh', overflowY: 'auto',
-              }}>
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 700, marginBottom: '24px' }}>
-                  {editingCategory ? '✏️ Edit Category' : '➕ Add New Category'}
-                </h2>
-
-                <form onSubmit={handleCategorySubmit}>
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
-                      Category Name (internal)
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={categoryFormData.name}
-                      onChange={handleCategoryInputChange}
-                      placeholder="e.g., cat-food"
-                      required
-                      style={{
-                        width: '100%', padding: '12px', borderRadius: '10px',
-                        border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(255,255,255,0.05)',
-                        color: 'white', fontSize: '14px',
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
-                      Display Name
-                    </label>
-                    <input
-                      type="text"
-                      name="displayName"
-                      value={categoryFormData.displayName}
-                      onChange={handleCategoryInputChange}
-                      placeholder="e.g., Cat Food"
-                      required
-                      style={{
-                        width: '100%', padding: '12px', borderRadius: '10px',
-                        border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(255,255,255,0.05)',
-                        color: 'white', fontSize: '14px',
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
-                      Icon
-                    </label>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {ICON_OPTIONS.map((icon) => (
-                        <button
-                          key={icon}
-                          type="button"
-                          onClick={() => setCategoryFormData({ ...categoryFormData, icon })}
-                          style={{
-                            width: '48px', height: '48px', borderRadius: '10px',
-                            border: categoryFormData.icon === icon ? '2px solid #8B5CF6' : '1px solid rgba(139,92,246,0.3)',
-                            background: categoryFormData.icon === icon ? 'rgba(139,92,246,0.3)' : 'rgba(255,255,255,0.05)',
-                            fontSize: '24px', cursor: 'pointer', transition: 'all 0.2s',
-                          }}
-                        >
-                          {icon}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div style={{ marginBottom: '24px' }}>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
-                      Description
-                    </label>
-                    <textarea
-                      name="description"
-                      value={categoryFormData.description}
-                      onChange={handleCategoryInputChange}
-                      placeholder="Category description..."
-                      rows={3}
-                      style={{
-                        width: '100%', padding: '12px', borderRadius: '10px',
-                        border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(255,255,255,0.05)',
-                        color: 'white', fontSize: '14px', resize: 'vertical',
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <button
-                      type="submit"
-                      style={{
-                        flex: 1, padding: '12px 24px',
-                        background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
-                        color: 'white', border: 'none', borderRadius: '10px',
-                        fontSize: '16px', fontWeight: 600, cursor: 'pointer',
-                      }}
-                    >
-                      {editingCategory ? '💾 Update' : '➕ Add'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowCategoryModal(false);
-                        setEditingCategory(null);
-                        setCategoryFormData({ name: '', displayName: '', icon: '📦', description: '', petType: selectedPetType });
-                      }}
-                      style={{
-                        flex: 1, padding: '12px 24px',
-                        background: 'rgba(255,255,255,0.1)', color: 'white',
-                        border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px',
-                        fontSize: '16px', fontWeight: 600, cursor: 'pointer',
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     );
   }
 
-  // Product View
+  // Product or Service View
   return (
     <div className="dashboard-page">
       <div className="container">
@@ -611,21 +528,25 @@ const PetHub = () => {
               marginBottom: '16px',
             }}
           >
-            ← Back to Categories
+            ← Back to Categories & Services
           </button>
           <span className="label-tag">🏠 Pet Hub</span>
           <h1 className="display-lg">
-            {selectedCategory.icon} {selectedCategory.displayName}
+            {selectedCategory ? selectedCategory.icon : selectedService?.icon} {selectedCategory ? selectedCategory.displayName : selectedService?.name}
           </h1>
           <p style={{ color: 'var(--muted)', marginTop: '10px' }}>
-            {selectedCategory.description}
+            {selectedCategory ? selectedCategory.description : selectedService?.description}
           </p>
         </div>
 
-        {isAdmin && (
+        {selectedCategory && canEdit && (
           <div style={{ marginBottom: '32px' }}>
             <button
-              onClick={() => setShowProductModal(true)}
+              onClick={() => {
+                setEditingProduct(null);
+                resetProductForm();
+                setShowProductModal(true);
+              }}
               style={{
                 padding: '12px 24px',
                 background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
@@ -645,49 +566,116 @@ const PetHub = () => {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-          {products.map((product) => (
-            <div
-              key={product._id}
-              className="glass-panel"
-              style={{
-                padding: '20px', borderRadius: '16px',
-                transition: 'transform 0.3s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-5px)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-            >
-              {product.images && product.images.length > 0 && (
-                <div style={{
-                  width: '100%', height: '180px', borderRadius: '12px',
-                  overflow: 'hidden', marginBottom: '16px',
-                  background: 'rgba(139,92,246,0.1)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                </div>
-              )}
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, marginBottom: '8px' }}>
-                {product.name}
-              </h3>
-              <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '12px', lineHeight: '1.4' }}>
-                {product.description?.substring(0, 100)}...
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '18px', fontWeight: 700, color: '#8B5CF6' }}>
-                  ${product.price}
-                </span>
-                <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                  Stock: {product.stock}
-                </span>
-              </div>
+        {selectedService ? (
+          <div style={{ textAlign: 'center', padding: '80px 0' }}>
+            <div style={{ fontSize: '64px', marginBottom: '20px' }}>
+              {selectedService.icon}
             </div>
-          ))}
-        </div>
+            <h3 style={{ fontSize: '20px', marginBottom: '10px' }}>
+              {selectedService.name}
+            </h3>
+            <p style={{ color: 'var(--muted)' }}>
+              Services will be available soon! Check back later.
+            </p>
+          </div>
+        ) : products.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '80px 0' }}>
+            <div style={{ fontSize: '64px', marginBottom: '20px' }}>📦</div>
+            <h3 style={{ fontSize: '20px', marginBottom: '10px' }}>No products yet</h3>
+            <p style={{ color: 'var(--muted)' }}>
+              {canEdit 
+                ? "Add some products to get started!" 
+                : "Check back later for products in this category!"}
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+            {products.map((product) => (
+              <div
+                key={product._id}
+                className="glass-panel"
+                style={{
+                  padding: '20px', borderRadius: '16px',
+                  transition: 'transform 0.3s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-5px)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                {product.images && product.images.length > 0 && (
+                  <div style={{
+                    width: '100%', height: '180px', borderRadius: '12px',
+                    overflow: 'hidden', marginBottom: '16px',
+                    background: 'rgba(139,92,246,0.1)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </div>
+                )}
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, marginBottom: '8px' }}>
+                  {product.name}
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '12px', lineHeight: '1.4' }}>
+                  {product.description?.substring(0, 100)}{product.description?.length > 100 ? '...' : ''}
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: canEdit ? '12px' : '0' }}>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: '#8B5CF6' }}>
+                    ${product.price}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                    Stock: {product.stock}
+                  </span>
+                </div>
+
+                {canEdit && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => handleEditProduct(product)}
+                      style={{
+                        flex: 1,
+                        padding: '8px 16px',
+                        background: 'rgba(139,92,246,0.1)',
+                        border: '1px solid rgba(139,92,246,0.3)',
+                        borderRadius: '8px',
+                        color: 'var(--violet-light)',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,92,246,0.2)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(139,92,246,0.1)'}
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProduct(product._id)}
+                      style={{
+                        flex: 1,
+                        padding: '8px 16px',
+                        background: 'rgba(239,68,68,0.1)',
+                        border: '1px solid rgba(239,68,68,0.3)',
+                        borderRadius: '8px',
+                        color: '#ef4444',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.2)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {showProductModal && (
           <div style={{
@@ -700,7 +688,7 @@ const PetHub = () => {
               maxHeight: '90vh', overflowY: 'auto',
             }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 700, marginBottom: '24px' }}>
-                ➕ Add New Product
+                {editingProduct ? '✏️ Edit Product' : '➕ Add New Product'}
               </h2>
 
               <form onSubmit={handleProductSubmit}>
@@ -713,7 +701,7 @@ const PetHub = () => {
                     name="name"
                     value={productFormData.name}
                     onChange={handleProductInputChange}
-                    placeholder="e.g., Premium Cat Food"
+                    placeholder="e.g., Premium Dog Food"
                     required
                     style={{
                       width: '100%', padding: '12px', borderRadius: '10px',
@@ -832,22 +820,14 @@ const PetHub = () => {
                       fontSize: '16px', fontWeight: 600, cursor: 'pointer',
                     }}
                   >
-                    ➕ Add Product
+                    {editingProduct ? '💾 Update' : '➕ Add'}
                   </button>
                   <button
                     type="button"
                     onClick={() => {
                       setShowProductModal(false);
-                      setProductFormData({
-                        name: '',
-                        description: '',
-                        price: '',
-                        stock: '',
-                        images: '',
-                        imageFiles: [],
-                        brand: '',
-                        specifications: {}
-                      });
+                      setEditingProduct(null);
+                      resetProductForm();
                     }}
                     style={{
                       flex: 1, padding: '12px 24px',
