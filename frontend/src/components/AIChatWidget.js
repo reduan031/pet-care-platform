@@ -5,7 +5,7 @@ import api from '../config/api';
 const AIChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Hi there! 🐾 I am your PawVerse AI Assistant. How can I help you and your pet today?' }
+    { role: 'assistant', content: 'Hi there! 🐾 I am PawVerse AI — your personalized pet assistant. I can see your pets, orders, marketplace listings, and shop products! Ask me anything like "What pets do I own?" or "How many products are in the shop?"' }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -97,14 +97,17 @@ const AIChatWidget = () => {
     chatHistory.push(userMessage);
 
     try {
-      // Base URL check from process.env for production
-      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      const apiBase = api.defaults.baseURL;
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const streamResponse = await fetch(`${apiBase}/ai/chat?stream=true`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'text/event-stream',
-        },
+        headers,
         body: JSON.stringify({ messages: chatHistory }),
         signal: abortControllerRef.current.signal,
       });
@@ -209,10 +212,10 @@ const AIChatWidget = () => {
   };
 
   const quickReplies = [
-    "My dog is not eating",
-    "How often to vaccinate my cat?",
-    "Best food for a puppy?",
-    "My cat temperature is hot"
+    "What pets do I own?",
+    "How many products are in the shop?",
+    "Any cats for adoption?",
+    "My dog is not eating"
   ];
 
   return (
