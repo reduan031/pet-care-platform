@@ -178,15 +178,24 @@ const MarketplaceHub = () => {
                     <option value="adopt">Adopt</option>
                   </select>
                 </div>
+                <div className="form-row-2" style={{ marginTop: 10 }}>
+                  <select className="filter-select" name="petType" value={newListing.petType} onChange={onCreateChange}>
+                    <option value="cat">🐱 Cat</option>
+                    <option value="dog">🐶 Dog</option>
+                    <option value="bird">🐦 Bird</option>
+                    <option value="rabbit">🐰 Rabbit</option>
+                    <option value="fish">🐠 Fish</option>
+                    <option value="hamster">🐹 Hamster</option>
+                    <option value="other">🐾 Other</option>
+                  </select>
+                  <input className="form-input" name="breed" placeholder="Breed" value={newListing.breed} onChange={onCreateChange} />
+                </div>
                 <textarea className="form-input" style={{ marginTop: 10 }} rows="3" name="description" placeholder="Description" value={newListing.description} onChange={onCreateChange} required />
                 <div className="form-row-2" style={{ marginTop: 10 }}>
-                  <input className="form-input" name="breed" placeholder="Breed" value={newListing.breed} onChange={onCreateChange} />
                   <input className="form-input" name="ageMonths" placeholder="Age (months)" value={newListing.ageMonths} onChange={onCreateChange} />
-                </div>
-                <div className="form-row-2" style={{ marginTop: 10 }}>
                   <input className="form-input" name="price" placeholder="Price (0 for free adoption)" value={newListing.price} onChange={onCreateChange} />
-                  <input className="form-input" name="locationText" placeholder="Location text" value={newListing.locationText} onChange={onCreateChange} required />
                 </div>
+                <input className="form-input" style={{ marginTop: 10 }} name="locationText" placeholder="Location text" value={newListing.locationText} onChange={onCreateChange} required />
                 <div style={{ marginTop: 10 }}>
                   <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Images ({newListing.media.length}/8)</label>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
