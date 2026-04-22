@@ -8,8 +8,15 @@ exports.createOrder = async (req, res) => {
   try {
     const { items, shippingAddress, paymentMethod, deliveryCharge, discount } = req.body;
 
+    console.log('Create order request:', { user: req.user?._id, items: items?.length, paymentMethod }); // Debug
+
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: 'No order items' });
+    }
+
+    // Check authentication
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
     }
 
     const orderItems = [];
@@ -18,6 +25,8 @@ exports.createOrder = async (req, res) => {
     for (const item of items) {
       // Handle both item._id and item.product (from different cart structures)
       const productId = item._id || item.product;
+      
+      console.log('Processing item:', { productId, quantity: item.quantity, name: item.name }); // Debug
       
       if (!productId) {
         return res.status(400).json({ success: false, message: 'Invalid cart item: missing product ID' });
@@ -44,7 +53,7 @@ exports.createOrder = async (req, res) => {
       totalAmount += (product.discountPrice || product.price) * (item.quantity || 1);
 
       product.stock -= (item.quantity || 1);
-      await product.save();
+      await product.save({ validateBeforeSave: false });
     }
 
     const finalAmount = totalAmount + (deliveryCharge || 0) - (discount || 0);
@@ -62,7 +71,8 @@ exports.createOrder = async (req, res) => {
 
     res.status(201).json({ success: true, data: order });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Create order error:', error); // Debug
+    res.status(500).json({ success: false, message: error.message, stack: error.stack });
   }
 };
 

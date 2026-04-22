@@ -6,11 +6,102 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import api from '../config/api';
 
+// Order Slip Component for printing
+const OrderSlip = ({ order, onClose }) => {
+  const printSlip = () => {
+    window.print();
+  };
+
+  const orderDate = new Date().toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+
+  return (
+    <div className="order-confirmation-overlay">
+      <div className="order-confirmation-modal">
+        {/* Print-only slip content */}
+        <div className="order-slip-print">
+          <div className="slip-header">
+            <h2>🐾 PawVerse Pet Shop</h2>
+            <p>Order Receipt</p>
+            <p className="slip-order-no">Order #: {order._id || order.orderId}</p>
+            <p className="slip-date">{orderDate}</p>
+          </div>
+
+          <div className="slip-section">
+            <h4>📍 Shipping Address</h4>
+            <p>{order.shippingAddress?.street}</p>
+            <p>{order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zipCode}</p>
+            <p>📞 {order.shippingAddress?.phone}</p>
+          </div>
+
+          <div className="slip-section">
+            <h4>💳 Payment</h4>
+            <p>Method: {order.paymentMethod?.toUpperCase()}</p>
+            <p>Status: PAID</p>
+          </div>
+
+          <div className="slip-items">
+            <h4>🛒 Items</h4>
+            <table className="slip-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Price</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.items?.map((item, i) => (
+                  <tr key={i}>
+                    <td>{item.name || item.product?.name}</td>
+                    <td>{item.quantity}</td>
+                    <td>৳{item.price}</td>
+                    <td>৳{(item.price * item.quantity).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="slip-totals">
+            <div className="slip-row">
+              <span>Subtotal:</span>
+              <span>৳{order.subTotal?.toFixed(2) || order.items?.reduce((a,b)=>a+(b.price*b.quantity),0).toFixed(2)}</span>
+            </div>
+            <div className="slip-row">
+              <span>Delivery Charge:</span>
+              <span>৳{order.deliveryCharge || 50}</span>
+            </div>
+            <div className="slip-row grand-total">
+              <span>GRAND TOTAL:</span>
+              <span>৳{order.finalAmount?.toFixed(2) || (order.subTotal + (order.deliveryCharge||50)).toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div className="slip-footer">
+            <p>Thank you for shopping with PawVerse! 🐾</p>
+            <p>Questions? Contact: support@pawverse.com</p>
+          </div>
+        </div>
+
+        {/* Action buttons (hidden when printing) */}
+        <div className="slip-actions no-print">
+          <button className="btn-primary" onClick={printSlip}>🖨️ Print Slip</button>
+          <button className="btn-ghost" onClick={onClose}>Continue Shopping</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Checkout = () => {
   const { cart, getCartTotal, clearCart } = useCart();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [completedOrder, setCompletedOrder] = useState(null);
 
   const [formData, setFormData] = useState({
     street: '',
@@ -30,11 +121,19 @@ const Checkout = () => {
     setLoading(true);
     setError('');
 
+    // Validate cart items
+    const invalidItems = cart.filter(item => !item._id || !item.quantity || item.quantity < 1);
+    if (invalidItems.length > 0) {
+      setError('Some items in cart are invalid. Please remove and add them again.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const orderData = {
         items: cart.map(item => ({
           _id: item._id,
-          quantity: item.quantity,
+          quantity: item.quantity || 1,
           price: item.discountPrice || item.price,
           name: item.name || item.title
         })),
@@ -50,19 +149,41 @@ const Checkout = () => {
         discount: 0
       };
 
+      console.log('Sending order:', orderData); // Debug
       const response = await api.post('/orders', orderData);
       
       if (response.data.success) {
         clearCart();
-        alert('Order placed successfully!');
-        navigate('/my-orders');
+        // Show order confirmation with print slip
+        setCompletedOrder({
+          _id: response.data.data?._id || 'ORDER-' + Date.now(),
+          items: orderData.items,
+          shippingAddress: orderData.shippingAddress,
+          paymentMethod: orderData.paymentMethod,
+          subTotal: getCartTotal(),
+          deliveryCharge: 50,
+          finalAmount: getCartTotal() + 50
+        });
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to place order');
+      console.error('Order error:', err.response?.data);
+      setError(err.response?.data?.message || err.message || 'Failed to place order');
     } finally {
       setLoading(false);
     }
   };
+
+  // Show order confirmation modal after successful order
+  if (completedOrder) {
+    return (
+      <div className="checkout-page">
+        <OrderSlip
+          order={completedOrder}
+          onClose={() => navigate('/my-orders')}
+        />
+      </div>
+    );
+  }
 
   if (cart.length === 0) {
     return (

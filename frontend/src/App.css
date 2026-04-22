@@ -3702,3 +3702,180 @@ html, body, a, button, input, select, textarea, label {
   text-overflow: ellipsis;
   margin-top: 2px;
 }
+
+/* ===================== ORDER SLIP / RECEIPT ===================== */
+.order-confirmation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+.order-confirmation-modal {
+  background: var(--ink-card);
+  border-radius: 16px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--glass-border);
+}
+.order-slip-print {
+  padding: 30px;
+  background: #fff;
+  color: #000;
+}
+.slip-header {
+  text-align: center;
+  border-bottom: 2px dashed #333;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+.slip-header h2 {
+  margin: 0 0 5px 0;
+  font-size: 22px;
+  color: #000;
+}
+.slip-header p {
+  margin: 3px 0;
+  color: #333;
+  font-size: 14px;
+}
+.slip-order-no {
+  font-weight: bold;
+  font-size: 16px;
+  color: #000;
+}
+.slip-section {
+  margin-bottom: 15px;
+}
+.slip-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  color: #555;
+  text-transform: uppercase;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 4px;
+}
+.slip-section p {
+  margin: 3px 0;
+  font-size: 14px;
+  color: #000;
+}
+.slip-items {
+  margin-bottom: 15px;
+}
+.slip-items h4 {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  color: #555;
+  text-transform: uppercase;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 4px;
+}
+.slip-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.slip-table th,
+.slip-table td {
+  padding: 6px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+.slip-table th {
+  font-weight: bold;
+  color: #333;
+}
+.slip-table td {
+  color: #000;
+}
+.slip-totals {
+  border-top: 2px solid #333;
+  padding-top: 15px;
+  margin-top: 15px;
+}
+.slip-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 5px 0;
+  font-size: 14px;
+  color: #000;
+}
+.slip-row.grand-total {
+  font-weight: bold;
+  font-size: 16px;
+  border-top: 1px solid #333;
+  padding-top: 8px;
+  margin-top: 8px;
+}
+.slip-footer {
+  text-align: center;
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 2px dashed #333;
+}
+.slip-footer p {
+  margin: 5px 0;
+  font-size: 12px;
+  color: #333;
+}
+.slip-actions {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  background: var(--glass);
+  border-top: 1px solid var(--glass-border);
+}
+.slip-actions button {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Print-specific styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .order-slip-print,
+  .order-slip-print * {
+    visibility: visible;
+  }
+  .order-slip-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 100%;
+    padding: 20px;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+}
+
+/* Order print button in MyOrders */
+.btn-print-slip {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--violet-light);
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.btn-print-slip:hover {
+  background: var(--violet);
+  color: #fff;
+}

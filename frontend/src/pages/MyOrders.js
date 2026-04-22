@@ -11,9 +11,98 @@ const STATUS_CLS = {
   cancelled: 'status-cancelled',
 };
 
+// Print Slip Modal Component
+const PrintSlipModal = ({ order, onClose }) => {
+  const printSlip = () => {
+    window.print();
+  };
+
+  const orderDate = new Date(order.orderDate || order.createdAt).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+
+  return (
+    <div className="order-confirmation-overlay" onClick={onClose}>
+      <div className="order-confirmation-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Print-only slip content */}
+        <div className="order-slip-print">
+          <div className="slip-header">
+            <h2>🐾 PawVerse Pet Shop</h2>
+            <p>Order Receipt</p>
+            <p className="slip-order-no">Order #{order._id?.slice(-8)}</p>
+            <p className="slip-date">{orderDate}</p>
+          </div>
+
+          <div className="slip-section">
+            <h4>📍 Shipping Address</h4>
+            <p>{order.shippingAddress?.street}</p>
+            <p>{order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zipCode}</p>
+            <p>📞 {order.shippingAddress?.phone}</p>
+          </div>
+
+          <div className="slip-section">
+            <h4>💳 Payment</h4>
+            <p>Method: {order.paymentMethod?.toUpperCase()}</p>
+            <p>Status: {order.paymentStatus?.toUpperCase()}</p>
+          </div>
+
+          <div className="slip-items">
+            <h4>🛒 Items</h4>
+            <table className="slip-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.items?.map((item, i) => (
+                  <tr key={i}>
+                    <td>{item.product?.name || item.name}</td>
+                    <td>{item.quantity}</td>
+                    <td>৳{item.price}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="slip-totals">
+            <div className="slip-row">
+              <span>Subtotal:</span>
+              <span>৳{order.subTotal}</span>
+            </div>
+            <div className="slip-row">
+              <span>Delivery:</span>
+              <span>৳{order.deliveryCharge || 50}</span>
+            </div>
+            <div className="slip-row grand-total">
+              <span>GRAND TOTAL:</span>
+              <span>৳{order.finalAmount}</span>
+            </div>
+          </div>
+
+          <div className="slip-footer">
+            <p>Thank you for shopping with PawVerse! 🐾</p>
+            <p>Questions? Contact: support@pawverse.com</p>
+          </div>
+        </div>
+
+        {/* Action buttons (hidden when printing) */}
+        <div className="slip-actions no-print">
+          <button className="btn-primary" onClick={printSlip}>🖨️ Print Slip</button>
+          <button className="btn-ghost" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MyOrders = () => {
   const [orders, setOrders]   = useState([]);
   const [loading, setLoading] = useState(true);
+  const [printOrder, setPrintOrder] = useState(null);
 
   useEffect(() => { fetchOrders(); }, []);
 
@@ -30,6 +119,14 @@ const MyOrders = () => {
 
   return (
     <div className="my-orders-page">
+      {/* Print Slip Modal */}
+      {printOrder && (
+        <PrintSlipModal
+          order={printOrder}
+          onClose={() => setPrintOrder(null)}
+        />
+      )}
+
       <div className="container">
         <div style={{ marginBottom: '40px' }} className="reveal">
           <span className="label-tag">📦 Orders</span>
@@ -57,9 +154,18 @@ const MyOrders = () => {
                       Placed {new Date(order.orderDate).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })}
                     </div>
                   </div>
-                  <span className={`order-status ${STATUS_CLS[order.orderStatus] || ''}`}>
-                    {order.orderStatus}
-                  </span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button
+                      className="btn-print-slip"
+                      onClick={() => setPrintOrder(order)}
+                      title="Print Order Slip"
+                    >
+                      🖨️ Print
+                    </button>
+                    <span className={`order-status ${STATUS_CLS[order.orderStatus] || ''}`}>
+                      {order.orderStatus}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Order items */}
