@@ -1847,6 +1847,18 @@ html, body, a, button, input, select, textarea, label {
   box-shadow: 0 4px 12px rgba(244,63,94,0.45);
 }
 
+.product-boarding-tag {
+  position: absolute;
+  top: 12px; left: 12px;
+  background: linear-gradient(135deg, #8B5CF6, #A78BFA);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(139,92,246,0.45);
+}
+
 .product-info {
   padding: 18px 20px;
 }
