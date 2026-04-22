@@ -354,6 +354,7 @@ const MarketplaceHub = () => {
                       {item.media?.[0] ? <img src={item.media[0]} alt={item.title} /> : <div className="product-img-ph">🐾</div>}
                       {item.isFreeAdoption && <div className="product-discount-tag">Free Adoption</div>}
                       {item.listingType === 'boarding' && <div className="product-boarding-tag">Pet Boarding</div>}
+                      {(item.listingType === 'sell' || item.listingType === 'selling') && <div className="product-selling-tag">For Sale</div>}
                     </div>
                     <div className="product-info">
                       <div className="product-name">{item.title}</div>

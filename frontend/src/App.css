@@ -1859,6 +1859,23 @@ html, body, a, button, input, select, textarea, label {
   box-shadow: 0 4px 12px rgba(139,92,246,0.45);
 }
 
+.product-selling-tag {
+  position: absolute;
+  top: 12px; left: 12px;
+  background: linear-gradient(135deg, #10B981, #34D399);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(16,185,129,0.45);
+}
+
+/* When both badges exist, position boarding below selling */
+.product-selling-tag ~ .product-boarding-tag {
+  top: 42px;
+}
+
 .product-info {
   padding: 18px 20px;
 }
