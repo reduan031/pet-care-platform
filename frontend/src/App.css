@@ -892,7 +892,6 @@ html, body, a, button, input, select, textarea, label {
   position: relative;
   overflow: hidden;
   transition: transform 0.35s, box-shadow 0.35s, border-color 0.35s;
-  group: true;
 }
 
 .cat-card::before {
@@ -3520,4 +3519,186 @@ html, body, a, button, input, select, textarea, label {
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .dashboard-stats { grid-template-columns: 1fr 1fr; }
   .cart-item-card { grid-template-columns: 70px 1fr auto; }
+}
+
+/* ===================== LEAFLET MAP STYLES ===================== */
+.map-wrapper {
+  position: relative;
+  z-index: 1;
+}
+.map-wrapper .leaflet-container {
+  background: var(--ink-soft);
+  font-family: inherit;
+}
+.map-wrapper .leaflet-popup-content-wrapper {
+  background: var(--ink-card);
+  color: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.map-wrapper .leaflet-popup-tip {
+  background: var(--ink-card);
+}
+.map-wrapper .leaflet-popup-content {
+  margin: 12px 14px;
+  line-height: 1.5;
+}
+.map-wrapper .leaflet-control-zoom a {
+  background: var(--ink-card);
+  color: #fff;
+  border-color: var(--glass-border);
+}
+.map-wrapper .leaflet-control-zoom a:hover {
+  background: var(--glass-hover);
+}
+.map-wrapper .leaflet-tile-pane {
+  filter: brightness(0.85) saturate(0.8);
+}
+.custom-marker-icon {
+  background: transparent !important;
+  border: none !important;
+}
+.leaflet-search-control {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.map-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--violet-light);
+}
+.map-hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 8px;
+  text-align: center;
+}
+.map-selected-coords {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--glass);
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  font-size: 13px;
+  color: var(--violet-light);
+}
+
+/* ===================== LOCATION SEARCH AUTOCOMPLETE ===================== */
+.location-search-container {
+  position: relative;
+  width: 100%;
+}
+.location-search-input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 0 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.location-search-input-wrap:focus-within {
+  border-color: var(--violet);
+  box-shadow: 0 0 0 3px var(--violet-glow);
+}
+.location-search-icon {
+  font-size: 18px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+.location-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 15px;
+  padding: 12px 0;
+  font-family: inherit;
+}
+.location-search-input::placeholder {
+  color: var(--muted);
+}
+.location-search-spinner {
+  font-size: 14px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.location-search-clear {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 6px;
+  border-radius: 50%;
+  transition: background 0.2s, color 0.2s;
+}
+.location-search-clear:hover {
+  background: var(--glass-hover);
+  color: #fff;
+}
+.location-search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--ink-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  margin-top: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+}
+.location-search-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.location-search-item:last-child {
+  border-bottom: none;
+}
+.location-search-item:hover,
+.location-search-item.selected {
+  background: var(--glass-hover);
+}
+.location-search-item-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.location-search-item-text {
+  flex: 1;
+  min-width: 0;
+}
+.location-search-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.location-search-item-full {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
 }

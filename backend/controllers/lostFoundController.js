@@ -5,7 +5,15 @@ const LostFound = require('../models/LostFound');
 
 exports.createReport = async (req, res) => {
   try {
-    const report = await LostFound.create({ ...req.body, userId: req.user._id });
+    const { lat, lng, ...rest } = req.body;
+    const location = (lat && lng)
+      ? { type: 'Point', coordinates: [Number(lng), Number(lat)] }
+      : { type: 'Point', coordinates: [90.4125, 23.8103] };
+    const report = await LostFound.create({
+      ...rest,
+      location,
+      userId: req.user._id,
+    });
     res.status(201).json({ success: true, data: report });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -14,12 +22,26 @@ exports.createReport = async (req, res) => {
 
 exports.getReports = async (req, res) => {
   try {
-    const { type, status } = req.query;
+    const { type, status, lat, lng, radiusKm } = req.query;
     let query = {};
     if (type) query.type = type;
     if (status) query.status = status;
 
-    const reports = await LostFound.find(query)
+    let findQuery = LostFound.find(query);
+
+    if (lat && lng && radiusKm) {
+      findQuery = LostFound.find({
+        ...query,
+        location: {
+          $near: {
+            $geometry: { type: 'Point', coordinates: [Number(lng), Number(lat)] },
+            $maxDistance: Number(radiusKm) * 1000,
+          },
+        },
+      });
+    }
+
+    const reports = await findQuery
       .populate('userId', 'name phone email')
       .populate('petId', 'name type breed photos')
       .sort('-createdAt');

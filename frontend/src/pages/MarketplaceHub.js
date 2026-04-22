@@ -3,6 +3,7 @@ import api from '../config/api';
 import { useAuth } from '../context/Authcontext';
 import { useLocation } from 'react-router-dom';
 import { fileToDataUrl } from '../utils/file';
+import { MapViewer, MapPicker, LocationSearchInput, listingIcons, reverseGeocode } from '../components/MapComponent';
 
 const MarketplaceHub = () => {
   // eslint-disable-next-line no-unused-vars
@@ -22,7 +23,8 @@ const MarketplaceHub = () => {
     maxAge: '',
     lat: '',
     lng: '',
-    radiusKm: '10',
+    radiusKm: '50',
+    locationName: '',
   });
   const [newListing, setNewListing] = useState({
     title: '',
@@ -39,12 +41,22 @@ const MarketplaceHub = () => {
   });
   const [imageMode, setImageMode] = useState('device');
   const [urlInput, setUrlInput] = useState('');
+  const [showMap, setShowMap] = useState(true);
 
-  const fetchListings = async () => {
+  const fetchListings = async (useGeo = false) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      Object.entries(form).forEach(([k, v]) => v && params.append(k, v));
+      Object.entries(form).forEach(([k, v]) => {
+        // Skip UI-only fields
+        if (k === 'locationName') return;
+        // For non-geo search, skip geo params
+        if ((k === 'lat' || k === 'lng' || k === 'radiusKm') && !useGeo) return;
+        // Only append if has value
+        if (v && v !== '') params.append(k, v);
+      });
+      params.set('limit', '50');
+      console.log('Fetching with params:', params.toString()); // Debug
       const res = await api.get(`/marketplace/listings?${params}`);
       setListings(res.data.data || []);
     } catch (error) {
@@ -134,12 +146,43 @@ const MarketplaceHub = () => {
         <div className="products-layout">
           <aside className="filters-panel">
             <h3>📍 Location + Filters</h3>
-            {['q', 'breed', 'lat', 'lng', 'radiusKm', 'minPrice', 'maxPrice', 'minAge', 'maxAge'].map((field) => (
-              <div key={field} className="filter-group">
-                <label>{field}</label>
-                <input className="form-input" name={field} value={form[field]} onChange={onFilterChange} />
-              </div>
-            ))}
+            <div className="filter-group">
+              <label>🔍 Search</label>
+              <input className="form-input" name="q" value={form.q} onChange={onFilterChange} placeholder="Search listings..." />
+            </div>
+            <div className="filter-group">
+              <label>📍 My Location</label>
+              <LocationSearchInput
+                value={form.locationName}
+                placeholder="🔍 Search area, city or address..."
+                onSelect={({ lat, lng, name }) => setForm((p) => ({ ...p, lat: String(lat), lng: String(lng), locationName: name }))}
+                onChange={(val) => setForm((p) => ({ ...p, locationName: val }))}
+              />
+              <button type="button" className="btn-ghost" style={{ width: '100%', marginTop: 6, justifyContent: 'center' }} onClick={() => {
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition(
+                    async (pos) => {
+                      const lat = pos.coords.latitude;
+                      const lng = pos.coords.longitude;
+                      const name = await reverseGeocode(lat, lng);
+                      setForm((p) => ({ ...p, lat: String(lat), lng: String(lng), locationName: name }));
+                    },
+                    () => alert('Location access denied. Search above instead.')
+                  );
+                }
+              }}>📍 Use My Current Location</button>
+            </div>
+            <div className="filter-group">
+              <label>📏 Radius (km)</label>
+              <select className="filter-select" name="radiusKm" value={form.radiusKm} onChange={onFilterChange}>
+                <option value="5">5 km</option>
+                <option value="10">10 km</option>
+                <option value="25">25 km</option>
+                <option value="50">50 km</option>
+                <option value="100">100 km</option>
+                <option value="200">200 km</option>
+              </select>
+            </div>
             <div className="filter-group">
               <label>Type</label>
               <select className="filter-select" name="type" value={form.type} onChange={onFilterChange}>
@@ -160,8 +203,23 @@ const MarketplaceHub = () => {
                 <option value="fish">Fish</option>
               </select>
             </div>
-            <button className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={fetchListings}>
-              Search Near Me
+            {[
+              { field: 'breed', label: '🐕 Breed' },
+              { field: 'minPrice', label: '💰 Min Price' },
+              { field: 'maxPrice', label: '💰 Max Price' },
+              { field: 'minAge', label: '📅 Min Age (mo)' },
+              { field: 'maxAge', label: '📅 Max Age (mo)' },
+            ].map(({ field, label }) => (
+              <div key={field} className="filter-group">
+                <label>{label}</label>
+                <input className="form-input" name={field} value={form[field]} onChange={onFilterChange} placeholder={field} />
+              </div>
+            ))}
+            <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginBottom: 8 }} onClick={() => fetchListings(true)}>
+              📍 Search Near Me
+            </button>
+            <button className="btn-ghost" style={{ width: '100%', justifyContent: 'center' }} onClick={() => fetchListings(false)}>
+              🌍 Show All Listings
             </button>
           </aside>
 
@@ -195,7 +253,41 @@ const MarketplaceHub = () => {
                   <input className="form-input" name="ageMonths" placeholder="Age (months)" value={newListing.ageMonths} onChange={onCreateChange} />
                   <input className="form-input" name="price" placeholder="Price (0 for free adoption)" value={newListing.price} onChange={onCreateChange} />
                 </div>
-                <input className="form-input" style={{ marginTop: 10 }} name="locationText" placeholder="Location text" value={newListing.locationText} onChange={onCreateChange} required />
+                <div style={{ marginTop: 10 }}>
+                  <label style={{ fontWeight: 500 }}>📍 Location</label>
+                  <LocationSearchInput
+                    value={newListing.locationText}
+                    placeholder="🔍 Search area, road name or landmark..."
+                    onSelect={({ lat, lng, name }) => setNewListing((p) => ({ ...p, lat: String(lat), lng: String(lng), locationText: name }))}
+                    onChange={(val) => setNewListing((p) => ({ ...p, locationText: val }))}
+                  />
+                  <button type="button" className="btn-ghost" style={{ width: '100%', marginTop: 6, justifyContent: 'center' }} onClick={() => {
+                    if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(
+                        async (pos) => {
+                          const lat = pos.coords.latitude;
+                          const lng = pos.coords.longitude;
+                          const name = await reverseGeocode(lat, lng);
+                          setNewListing((p) => ({ ...p, lat: String(lat), lng: String(lng), locationText: name }));
+                        },
+                        () => alert('Location access denied. Search above instead.')
+                      );
+                    }
+                  }}>📍 Use My Current Location</button>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <div className="map-section-title">🗺️ Or click on map</div>
+                  <MapPicker
+                    onLocationSelect={({ lat, lng, name }) => setNewListing((p) => ({ ...p, lat: String(lat), lng: String(lng), locationText: name || p.locationText }))}
+                    height="220px"
+                  />
+                  {newListing.lat && newListing.lng && (
+                    <div className="map-selected-coords">
+                      📍 {newListing.locationText || `${parseFloat(newListing.lat).toFixed(4)}, ${parseFloat(newListing.lng).toFixed(4)}`}
+                    </div>
+                  )}
+                  <p className="map-hint">Type to search, or click anywhere on map</p>
+                </div>
                 <div style={{ marginTop: 10 }}>
                   <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Images ({newListing.media.length}/8)</label>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
@@ -227,6 +319,30 @@ const MarketplaceHub = () => {
               </form>
             </div>
             )}
+
+            <div style={{ marginBottom: 20 }}>
+              <div className="map-section-title">🗺️ Listings Map View</div>
+              <button className="btn-ghost" style={{ marginBottom: 10 }} onClick={() => setShowMap(!showMap)}>
+                {showMap ? 'Hide Map' : 'Show Map'}
+              </button>
+              {showMap && (
+                <MapViewer
+                  markers={listings
+                    .filter((item) => item.location?.coordinates)
+                    .map((item) => ({
+                      id: item._id,
+                      position: [item.location.coordinates[1], item.location.coordinates[0]],
+                      title: item.title,
+                      description: `${item.petType} · ${item.listingType} · ${item.locationText}`,
+                      price: item.price,
+                      icon: listingIcons[item.listingType] || listingIcons.sell,
+                    }))}
+                  center={[23.8103, 90.4125]}
+                  zoom={11}
+                  height="350px"
+                />
+              )}
+            </div>
 
             {loading ? (
               <div className="loading-state"><div className="loading-paw">🐾</div><div className="loading-text">Loading nearby listings...</div></div>

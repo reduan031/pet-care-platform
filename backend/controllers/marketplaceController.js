@@ -67,11 +67,17 @@ exports.searchListings = async (req, res) => {
       lng,
       radiusKm,
       page = 1,
-      limit = 12,
+      limit = 50,
       q,
     } = req.query;
 
+    console.log('Search params:', { lat, lng, radiusKm, type, petType, q }); // Debug
+
     const query = { status: 'active' };
+
+    // Geo search requires all three params
+    const hasGeo = lat && lng && radiusKm;
+    console.log('Has geo search:', hasGeo); // Debug
     if (type) query.listingType = type;
     if (petType) query.petType = petType;
     if (breed) query.breed = new RegExp(breed, 'i');
@@ -90,8 +96,8 @@ exports.searchListings = async (req, res) => {
     }
 
     let mongoQuery = Listing.find(query).populate('ownerId', 'name email phone');
-    if (lat && lng && radiusKm) {
-      mongoQuery = Listing.find({
+    if (hasGeo) {
+      const geoQuery = {
         ...query,
         location: {
           $near: {
@@ -99,7 +105,9 @@ exports.searchListings = async (req, res) => {
             $maxDistance: Number(radiusKm) * 1000,
           },
         },
-      }).populate('ownerId', 'name email phone');
+      };
+      console.log('Geo query:', JSON.stringify(geoQuery.location));
+      mongoQuery = Listing.find(geoQuery).populate('ownerId', 'name email phone');
     }
 
     const pageNum = Number(page);
@@ -109,6 +117,7 @@ exports.searchListings = async (req, res) => {
       .skip((pageNum - 1) * lim)
       .limit(lim);
 
+    console.log('Results found:', data.length); // Debug
     res.json({ success: true, page: pageNum, count: data.length, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

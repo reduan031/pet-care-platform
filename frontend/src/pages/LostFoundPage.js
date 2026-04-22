@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../config/api';
 import './LostFoundPage.css';
 import { fileToDataUrl } from '../utils/file';
+import { MapViewer, MapPicker, LocationSearchInput, lostIcon, foundIcon, reverseGeocode } from '../components/MapComponent';
 
 const LostFoundPage = () => {
   const [reports, setReports] = useState([]);
@@ -16,8 +17,11 @@ const LostFoundPage = () => {
     description: '',
     contactPhone: '',
     contactEmail: '',
-    photo: ''
+    photo: '',
+    lat: '',
+    lng: '',
   });
+  const [showMap, setShowMap] = useState(true);
 
   const fetchReports = React.useCallback(async () => {
     setLoading(true);
@@ -63,7 +67,9 @@ const LostFoundPage = () => {
         description: '',
         contactPhone: '',
         contactEmail: '',
-        photo: ''
+        photo: '',
+        lat: '',
+        lng: '',
       });
       fetchReports();
     } catch (error) {
@@ -84,6 +90,21 @@ const LostFoundPage = () => {
       <div className="lf-tabs">
         <button className={`lf-tab ${activeTab === 'lost' ? 'active' : ''}`} onClick={() => setActiveTab('lost')}>💔 Lost Pets</button>
         <button className={`lf-tab ${activeTab === 'found' ? 'active' : ''}`} onClick={() => setActiveTab('found')}>🤍 Found Pets</button>
+        <button className="btn-ghost" onClick={() => {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              async (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                const name = await reverseGeocode(lat, lng);
+                setFormData((p) => ({ ...p, lat: String(lat), lng: String(lng), address: name || p.address }));
+              },
+              () => alert('Location access denied. Search below instead.')
+            );
+          }
+        }}>
+          📍 Use My Location
+        </button>
       </div>
 
       {showAddForm && (
@@ -99,8 +120,39 @@ const LostFoundPage = () => {
           </div>
 
           <div className="form-group">
-            <label>Approximate Address / Map Location</label>
-            <input type="text" name="address" required className="form-input" placeholder="e.g. Near Central Park, NY" value={formData.address} onChange={handleChange} />
+            <label>📍 Where did you see the pet?</label>
+            <LocationSearchInput
+              value={formData.address}
+              placeholder="🔍 Search area, road name or landmark..."
+              onSelect={({ lat, lng, name }) => setFormData((p) => ({ ...p, lat: String(lat), lng: String(lng), address: name }))}
+              onChange={(val) => setFormData((p) => ({ ...p, address: val }))}
+            />
+            <button type="button" className="btn-ghost" style={{ width: '100%', marginTop: 6, justifyContent: 'center' }} onClick={() => {
+              if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                  async (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    const name = await reverseGeocode(lat, lng);
+                    setFormData((p) => ({ ...p, lat: String(lat), lng: String(lng), address: name }));
+                  },
+                  () => alert('Location access denied. Search above instead.')
+                );
+              }
+            }}>📍 Use My Current Location</button>
+            <div style={{ marginTop: 10 }}>
+              <div className="map-section-title">🗺️ Or click on map</div>
+              <MapPicker
+                onLocationSelect={({ lat, lng, name }) => setFormData((p) => ({ ...p, lat: String(lat), lng: String(lng), address: name || p.address }))}
+                height="220px"
+              />
+              {formData.lat && formData.lng && (
+                <div className="map-selected-coords">
+                  📍 {formData.address || `${parseFloat(formData.lat).toFixed(4)}, ${parseFloat(formData.lng).toFixed(4)}`}
+                </div>
+              )}
+              <p className="map-hint">Type to search, or click anywhere on map</p>
+            </div>
           </div>
 
           <div className="form-group">
@@ -133,6 +185,29 @@ const LostFoundPage = () => {
           <button type="submit" className="btn-primary">Broadast Report 📡</button>
         </form>
       )}
+
+      <div style={{ marginBottom: 20 }}>
+        <div className="map-section-title">🗺️ Lost & Found Map</div>
+        <button className="btn-ghost" style={{ marginBottom: 10 }} onClick={() => setShowMap(!showMap)}>
+          {showMap ? 'Hide Map' : 'Show Map'}
+        </button>
+        {showMap && (
+          <MapViewer
+            markers={reports
+              .filter((r) => r.location?.coordinates)
+              .map((r) => ({
+                id: r._id,
+                position: [r.location.coordinates[1], r.location.coordinates[0]],
+                title: r.address,
+                description: r.description,
+                icon: r.type === 'lost' ? lostIcon : foundIcon,
+              }))}
+            center={[23.8103, 90.4125]}
+            zoom={11}
+            height="350px"
+          />
+        )}
+      </div>
 
       {loading ? (
         <div className="lf-loading">Scanning Radar...</div>
